@@ -1,13 +1,12 @@
 package fixtures
 
 import (
-	"fmt"
 	"net/http"
 	"rabi-food-core/libs/database/gateways/user_gateway"
 	"rabi-food-core/usecases/user_case"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/gavv/httpexpect/v2"
 )
 
 type userFixture struct {
@@ -36,15 +35,13 @@ func (userFixture) Create(t *testing.T, input *user_case.CreateInput, token stri
 	}
 
 	id := ""
-	statusCode := Post(t, PostInput{
-		Body:     Body,
-		URI:      User.URI,
-		Response: &id,
-		Token:    token,
-	})
-
-	require.Equal(t, http.StatusCreated, statusCode, fmt.Sprintf("reponse: %s", id))
-	require.NotEmpty(t, id)
+	httpexpect.Default(t, AppURL).
+		Request(http.MethodPost, User.URI).
+		WithHeader("Authorization", "Bearer "+token).
+		WithJSON(Body).
+		Expect().
+		Status(http.StatusCreated).
+		Body().Decode(&id)
 
 	return id
 }
@@ -52,13 +49,13 @@ func (userFixture) Create(t *testing.T, input *user_case.CreateInput, token stri
 func (userFixture) GetByID(t *testing.T, id string, token string) (user_gateway.GetByIDOutput, int) {
 	found := user_gateway.GetByIDOutput{}
 
-	input := GetInput{
-		URI:      User.URI + id,
-		Response: &found,
-		Token:    token,
-	}
+	obj := httpexpect.Default(t, AppURL).
+		Request(http.MethodGet, User.URI+id).
+		WithHeader("Authorization", "Bearer "+token).
+		Expect()
 
-	statusCode := Get(t, input)
+	response := obj.Status(http.StatusOK).Raw()
+	obj.JSON().Object().Decode(&found)
 
-	return found, statusCode
+	return found, response.StatusCode
 }

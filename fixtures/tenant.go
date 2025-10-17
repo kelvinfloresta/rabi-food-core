@@ -6,6 +6,7 @@ import (
 	"rabi-food-core/usecases/tenant_case"
 	"testing"
 
+	"github.com/gavv/httpexpect/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,13 +28,13 @@ func (tenantFixture) Create(t *testing.T, input *tenant_case.CreateInput) *tenan
 	}
 
 	output := &tenant_case.CreateOutput{}
-	statusCode := Post(t, PostInput{
-		Body:     Body,
-		URI:      Tenant.URI,
-		Response: output,
-	})
+	httpexpect.Default(t, AppURL).
+		Request(http.MethodPost, Tenant.URI).
+		WithJSON(Body).
+		Expect().Status(http.StatusCreated).
+		JSON().Object().
+		Decode(output)
 
-	require.Equal(t, http.StatusCreated, statusCode, fmt.Sprintf("reponse: %s", output))
 	require.NotEqual(t, output, &tenant_case.CreateOutput{}, fmt.Sprintf("reponse: %s", output))
 
 	return output
