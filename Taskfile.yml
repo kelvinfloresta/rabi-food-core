@@ -13,7 +13,7 @@ tasks:
   test:
     cmds:
       - go clean -testcache
-      - go run gotest.tools/gotestsum@latest --format testname -- ./... -v
+      - go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
   mockgen:
     cmds:
       - mockery --all --output fixtures/mocks
