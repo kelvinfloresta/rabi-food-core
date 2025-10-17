@@ -1,0 +1,21 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - go run cmd/server/main.go
+    silent: true
+  test_setup:
+    cmds:
+      - go run cmd/test_setup/main.go
+  test:
+    cmds:
+      - go clean -testcache
+      - go run gotest.tools/gotestsum@latest --format testname -- ./... -v
+  mockgen:
+    cmds:
+      - mockery --all --output fixtures/mocks
+
+

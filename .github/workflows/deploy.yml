@@ -1,0 +1,63 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  Deploy:
+    runs-on: ubuntu-latest
+    container: golang:1.21.0
+    env:
+      TEST_PORT: 3000
+      TEST_DATABASE_HOST: postgres
+
+    services:
+      postgres:
+        image: postgres:16-alpine3.18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v3
+
+      - name: Run Test
+        run: |
+          go run cmd/test_setup/test_setup.go &
+          sleep 5
+          go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
+
+      - name: Generate binary
+        run: go build -o rabi-food-core-core cmd/server/main.go
+
+      - name: Rename binary
+        run: mv rabi-food-core-core rabi-food-core-core@latest
+
+      - name: Copy binary
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST_PRODUCTION }}
+          username: ${{ secrets.SSH_USER_PRODUCTION }}
+          key: ${{ secrets.SSH_KEY_PRODUCTION }}
+          source: "./rabi-food-core-core@latest"
+          target: "~/"
+
+      - name: Deploy script
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST_PRODUCTION }}
+          username: ${{ secrets.SSH_USER_PRODUCTION }}
+          key: ${{ secrets.SSH_KEY_PRODUCTION }}
+          script: |
+            mv rabi-food-core-core@latest rabi-food-core-core
+            chmod 700 rabi-food-core-core
+            sudo systemctl restart rabi-food-core.service

@@ -1,0 +1,39 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - staging
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    container: golang:1.21.0
+    env:
+      PORT: 3000
+      TEST_DATABASE_HOST: postgres
+
+    services:
+      postgres:
+        image: postgres:16-alpine3.18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v3
+
+      - name: Run Test
+        run: |
+          go run cmd/test_setup/test_setup.go &
+          sleep 5
+          go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
