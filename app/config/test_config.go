@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	TestPort     = testEnv("PORT", "3001")
+	TestPort     = testEnv("PORT", "3000")
 	TestDatabase = &DatabaseConfig{
 		Host:         testEnv("TEST_DATABASE_HOST", "localhost"),
 		User:         testEnv("TEST_DATABASE_USER", "postgres"),
@@ -16,10 +16,8 @@ var (
 )
 
 func testEnv(key string, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
+	if value, exists := os.LookupEnv(key); exists {
+		return value
 	}
-
-	return value
+	return defaultValue
 }

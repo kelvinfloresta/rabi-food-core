@@ -3,19 +3,62 @@
 version: '3'
 
 tasks:
+  # =============================
+  # 🧠 Default: Run app locally (no Docker)
+  # =============================
   default:
+    desc: "Run the Go application locally (simple mode)"
+    dir: app/cmd/server
     cmds:
-      - go run cmd/server/main.go
+      - go run main.go
     silent: true
-  test_setup:
+
+  # =============================
+  # 🧱 Development with Docker + hot reload
+  # =============================
+  dev:
+    desc: "Start the development environment with hot reload (Air)"
+    dir: infra
     cmds:
-      - go run cmd/test_setup/main.go
+      - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
+    silent: false
+
+  devdown:
+    desc: "Stop and remove the development environment"
+    dir: infra
+    cmds:
+      - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml down
+    silent: false
+
+  # =============================
+  # 🚀 Production build and run
+  # =============================
+  build:
+    desc: "Build the production Docker image"
+    dir: infra
+    cmds:
+      - docker build -t my-app:latest -f Dockerfile ../../
+    silent: false
+
+  run:
+    desc: "Run the production image locally"
+    dir: infra
+    cmds:
+      - docker run -p 3000:3000 --env-file .env my-app:latest
+    silent: false
+
+  # =============================
+  # 🧪 Tests and utilities
+  # =============================
   test:
+    desc: "Run all Go tests with summarized output"
+    dir: .
     cmds:
       - go clean -testcache
       - go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
+
   mockgen:
+    desc: "Generate mocks using Mockery"
+    dir: .
     cmds:
       - mockery --all --output fixtures/mocks
-
-

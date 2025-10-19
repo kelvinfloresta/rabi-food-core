@@ -38,21 +38,19 @@ func newFiber(d database.Database) http.HTTPServer {
 	})
 
 	tenantController := factories.NewTenant(d)
-	app.Use(
-		cors.New(),
-	).Use(
-		requestid.New(requestid.Config{
-			ContextKey: logger.LoggerKey,
-		}),
-	).Post(
-		"/tenant", tenantController.Create,
-	).Use(
-		jwtware.New(jwtware.Config{
-			SigningKey: jwtware.SigningKey{Key: []byte(config.AuthSecret)},
-		}),
-	).Use(
-		auth_controller.Session,
-	)
+	jwtMiddleware := jwtware.New(jwtware.Config{
+		SigningKey: jwtware.SigningKey{Key: []byte(config.AuthSecret)},
+	})
+	requestIDMiddleware := requestid.New(requestid.Config{
+		ContextKey: logger.LoggerKey,
+	})
+
+	app.
+		Use(cors.New()).
+		Use(requestIDMiddleware).
+		Post("/tenant", tenantController.Create).
+		Use(jwtMiddleware).
+		Use(auth_controller.Session)
 
 	routes.User(app, factories.NewUser(d))
 	routes.Tenant(app, tenantController)

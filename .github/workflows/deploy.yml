@@ -8,14 +8,14 @@ on:
 jobs:
   Deploy:
     runs-on: ubuntu-latest
-    container: golang:1.21.0
+    container: golang:1.25.0
     env:
       TEST_PORT: 3000
       TEST_DATABASE_HOST: postgres
 
     services:
       postgres:
-        image: postgres:16-alpine3.18
+        image: postgres:17.6-bookworm
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

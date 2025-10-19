@@ -1,0 +1,37 @@
+otelcol.receiver.otlp "default" {
+  grpc { endpoint = "0.0.0.0:4317" }
+  http { endpoint = "0.0.0.0:4318" }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+prometheus.exporter.process "self" {}
+prometheus.exporter.scrape "default" {
+  targets = [prometheus.exporter.process.self.target]
+}
+
+loki.source.file "docker" {
+  targets = [
+    {
+      __path__ = "/var/lib/docker/containers/*/*.log",
+      job      = "docker"
+    }
+  ]
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "main" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
