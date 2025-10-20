@@ -29,6 +29,13 @@ tasks:
     cmds:
       - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml down
     silent: false
+  
+  devrestart:
+    desc: "Restart the development environment"
+    dir: infra
+    cmds:
+      - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml restart
+    silent: false
 
   # =============================
   # 🚀 Production build and run
@@ -62,3 +69,19 @@ tasks:
     dir: .
     cmds:
       - mockery --all --output fixtures/mocks
+
+  # =============================
+  # 🔧 Infrastructure utils
+  # =============================
+  validate_alloy:
+    desc: "Validate the Alloy configuration"
+    dir: infra
+    cmds:
+      - docker run --rm -v $(pwd)/alloy.config.alloy:/etc/alloy/alloy.config.alloy grafana/alloy:latest validate /etc/alloy/alloy.config.alloy
+
+  logs:
+    desc: "Watch logs of a specific Docker service"
+    dir: infra
+    cmds:
+      - docker compose logs -f {{.CLI_ARGS}}
+    interactive: true

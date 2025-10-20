@@ -1,13 +1,4 @@
-otelcol.receiver.otlp "default" {
-  grpc { endpoint = "0.0.0.0:4317" }
-  http { endpoint = "0.0.0.0:4318" }
-}
-
-loki.write "local" {
-  endpoint {
-    url = "http://loki:3100/loki/api/v1/push"
-  }
-}
+prometheus.exporter.self "self" {}
 
 prometheus.remote_write "local" {
   endpoint {
@@ -15,23 +6,51 @@ prometheus.remote_write "local" {
   }
 }
 
-prometheus.exporter.process "self" {}
-prometheus.exporter.scrape "default" {
-  targets = [prometheus.exporter.process.self.target]
+prometheus.scrape "alloy_metrics" {
+  targets    = prometheus.exporter.self.self.targets
+  forward_to = [prometheus.remote_write.local.receiver]
 }
 
-loki.source.file "docker" {
-  targets = [
-    {
-      __path__ = "/var/lib/docker/containers/*/*.log",
-      job      = "docker"
-    }
-  ]
-  forward_to = [loki.write.local.receiver]
+discovery.docker "linux" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "60s"
 }
 
-loki.write "main" {
+discovery.relabel "docker" {
+  targets = []
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/docker"
+  }
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+}
+
+loki.source.docker "docker_containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.linux.targets
+  relabel_rules = discovery.relabel.docker.rules
+  forward_to    = [loki.write.local.receiver]
+  refresh_interval = "5s"
+}
+
+loki.write "local" {
   endpoint {
-    url = "http://loki:3100/loki/api/v1/push"
+    url = "http://loki:3200/loki/api/v1/push"
   }
 }

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:17.6-bookworm
@@ -37,6 +35,11 @@ services:
   app:
     build:
       context: ../app
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../app:/app
+      - /go/pkg/mod
+      - /go/bin
     environment:
       - ENV=dev
       - DATABASE_HOST=postgres

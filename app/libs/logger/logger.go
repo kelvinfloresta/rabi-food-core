@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"rabi-food-core/config"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -13,12 +14,13 @@ var (
 	LoggerKey = "loggerKey"
 )
 
-func Init() {
+func init() {
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if config.Env == "dev" {
-		base = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
+		base = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
 	} else {
 		base = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	}
