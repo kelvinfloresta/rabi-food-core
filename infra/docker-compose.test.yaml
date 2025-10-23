@@ -1,30 +1,4 @@
 services:
-  app:
-    container_name: app-test
-    image: rabi-food-test
-    build:
-      context: ../app
-      dockerfile: Dockerfile.test
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
-    env_file:
-      - ../.env.test
-    command: >
-      sh -c "
-        mockery --all --output fixtures/mocks &&
-        go clean -testcache &&
-        gotestsum --format testname -- ./... -p 1 -v
-      "
-    volumes:
-      - ../app:/app
-      - /go/pkg/mod
-      - /go/bin
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - test
-
   postgres:
     image: postgres:17.6-bookworm
     container_name: postgres
