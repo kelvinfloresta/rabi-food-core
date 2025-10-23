@@ -33,7 +33,7 @@ tasks:
   # =============================
   # 🧪 Tests and utilities
   # =============================
-  test-infra:
+  infra-test:
     desc: "Start only the infrastructure for tests (Postgres, pgAdmin)"
     dir: infra
     dotenv: ["../.env.test"]
@@ -41,16 +41,30 @@ tasks:
       - docker compose -f docker-compose.test.yaml up -d postgres pgadmin
     silent: false
 
-  test:
-    desc: "Start the test environment"
+  infra-test-down:
+    desc: "Stop the test infrastructure"
     dir: infra
     dotenv: ["../.env.test"]
-    deps: [test-infra]
     cmds:
-      - docker compose -f docker-compose.test.yaml up app --build --force-recreate
+      - docker compose -f docker-compose.test.yaml down
+    silent: true
+
+  mockgen:
+    desc: "Generate mocks using mockery"
+    dir: app
+    cmds:
+      - go run github.com/vektra/mockery/v2@v2.53.5 --all --output fixtures/mocks
     silent: false
 
-
+  test:
+    desc: "Start the test environment"
+    dir: app
+    dotenv: ["../.env.test"]
+    deps: [infra-test]
+    cmds:
+      - go clean -testcache
+      - go run gotest.tools/gotestsum@v1.13.0 --format testname -- ./... -p 1 -v
+    silent: false
 
   # =============================
   # 🔧 Infrastructure utils
