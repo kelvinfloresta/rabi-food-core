@@ -3,10 +3,10 @@ services:
     image: rabi-food:latest
     container_name: app
     ports:
-      - "3000:3000"
+      - "${PORT}:${PORT}"
     environment:
-      - ENV=production
-      - PORT=3000
+      - ENV=${ENV}
+      - PORT=${PORT}
       - AUTH_SECRET=${AUTH_SECRET}
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_NAME=${DATABASE_NAME}
