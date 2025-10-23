@@ -6,11 +6,7 @@
       "Host": "postgres",
       "Port": 5432,
       "MaintenanceDB": "postgres",
-      "Username": "postgres",
-      "ConnectionParameters": {
-        "passfile": "/pgpass"
-      },
-      "SSLMode": "prefer"
+      "Username": "postgres"
     }
   }
 }
