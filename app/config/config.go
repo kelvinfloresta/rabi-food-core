@@ -3,7 +3,7 @@ package config
 import "os"
 
 var (
-	Port               = os.Getenv("PORT")
+	Port               = os.Getenv("APP_PORT")
 	AuthSecret         = os.Getenv("AUTH_SECRET")
 	Env                = os.Getenv("ENV")
 	ProductionDatabase = &DatabaseConfig{
