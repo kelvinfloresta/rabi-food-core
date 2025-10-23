@@ -4,71 +4,53 @@ version: '3'
 
 tasks:
   # =============================
-  # 🧠 Default: Run app locally (no Docker)
-  # =============================
-  default:
-    desc: "Run the Go application locally (simple mode)"
-    dir: app/cmd/server
-    cmds:
-      - go run main.go
-    silent: true
-
-  # =============================
-  # 🧱 Development with Docker + hot reload
-  # =============================
-  dev:
-    desc: "Start the development environment with hot reload (Air)"
-    dir: infra
-    cmds:
-      - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build
-    silent: false
-
-  devdown:
-    desc: "Stop and remove the development environment"
-    dir: infra
-    cmds:
-      - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml down
-    silent: false
-  
-  devrestart:
-    desc: "Restart the development environment"
-    dir: infra
-    cmds:
-      - docker compose -f docker-compose.yaml -f docker-compose.dev.yaml restart
-    silent: false
-
-  # =============================
   # 🚀 Production build and run
   # =============================
   build:
     desc: "Build the production Docker image"
-    dir: infra
+    dir: app
     cmds:
-      - docker build -t my-app:latest -f Dockerfile ../../
+      - docker build -t rabi-food:latest
     silent: false
 
-  run:
-    desc: "Run the production image locally"
+  # =============================
+  # 🏗️ Infrastructure services
+  # =============================
+  infra:
+    desc: "Start the infrastructure services (Grafana, Prometheus, Loki, Alloy)"
     dir: infra
     cmds:
-      - docker run -p 3000:3000 --env-file .env my-app:latest
+      - docker compose -f docker-compose.infra.yaml up -d
     silent: false
+
+  infra-down:
+    desc: "Stop the infrastructure"
+    dir: infra
+    cmds:
+      - docker compose -f docker-compose.infra.yaml down
+    silent: true
 
   # =============================
   # 🧪 Tests and utilities
   # =============================
-  test:
-    desc: "Run all Go tests with summarized output"
-    dir: .
+  test-infra:
+    desc: "Start only the infrastructure for tests (Postgres, pgAdmin)"
+    dir: infra
+    dotenv: ["../.env.test"]
     cmds:
-      - go clean -testcache
-      - go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
+      - docker compose -f docker-compose.test.yaml up -d postgres pgadmin
+    silent: false
 
-  mockgen:
-    desc: "Generate mocks using Mockery"
-    dir: .
+  test:
+    desc: "Start the test environment"
+    dir: infra
+    dotenv: ["../.env.test"]
+    deps: [test-infra]
     cmds:
-      - mockery --all --output fixtures/mocks
+      - docker compose -f docker-compose.test.yaml up app --build --force-recreate
+    silent: false
+
+
 
   # =============================
   # 🔧 Infrastructure utils
@@ -80,8 +62,8 @@ tasks:
       - docker run --rm -v $(pwd)/alloy.config.alloy:/etc/alloy/alloy.config.alloy grafana/alloy:latest validate /etc/alloy/alloy.config.alloy
 
   logs:
-    desc: "Watch logs of a specific Docker service"
+    desc: "Watch application logs"
     dir: infra
     cmds:
-      - docker compose logs -f {{.CLI_ARGS}}
+      - docker compose logs -f app
     interactive: true
