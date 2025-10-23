@@ -1,12 +1,14 @@
 services:
   app:
-    image: rabi-food:latest
+    image: rabi-food:${TAG}
     container_name: app
+    build:
+      context: ../app
     ports:
-      - "${PORT}:${PORT}"
+      - "${APP_PORT}:${APP_PORT}"
     environment:
       - ENV=${ENV}
-      - PORT=${PORT}
+      - APP_PORT=${APP_PORT}
       - AUTH_SECRET=${AUTH_SECRET}
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_NAME=${DATABASE_NAME}
@@ -23,78 +25,3 @@ services:
       - alloy
     networks:
       - observability
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3100:3100"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_HTTP_PORT=3100
-      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    depends_on:
-      - loki
-    restart: unless-stopped
-    networks:
-      - observability
-
-  loki:
-    image: grafana/loki:3.5.7
-    container_name: loki
-    ports:
-      - "3200:3200"
-    command: 
-      - "--config.file=/etc/loki/local-config.yaml"
-      - "--server.http-listen-port=3200"
-    volumes:
-      - loki-data:/loki
-    restart: unless-stopped
-    networks:
-      - observability
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
-      - prometheus-data:/prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--web.enable-remote-write-receiver"
-      - "--web.listen-address=:9090"
-    depends_on:
-      - loki
-    restart: unless-stopped
-    networks:
-      - observability
-
-  alloy:
-    image: grafana/alloy:latest
-    container_name: alloy
-    command: ["run", "/etc/alloy/alloy.config.alloy"]
-    volumes:
-      - ./alloy.config.alloy:/etc/alloy/alloy.config.alloy:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - loki
-      - prometheus
-    restart: unless-stopped
-    networks:
-      - observability
-
-volumes:
-  grafana-data:
-  prometheus-data:
-  loki-data:
-
-networks:
-  observability:
-    driver: bridge

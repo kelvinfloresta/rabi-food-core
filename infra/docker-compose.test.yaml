@@ -1,8 +1,20 @@
 services:
   app:
+    container_name: app-test
+    image: rabi-food-test
     build:
       context: ../app
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.test
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    env_file:
+      - ../.env.test
+    command: >
+      sh -c "
+        mockery --all --output fixtures/mocks &&
+        go clean -testcache &&
+        gotestsum --format testname -- ./... -p 1 -v
+      "
     volumes:
       - ../app:/app
       - /go/pkg/mod
@@ -11,17 +23,17 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - observability
+      - test
 
   postgres:
     image: postgres:17.6-bookworm
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_NAME}
-      POSTGRES_PORT: ${DATABASE_PORT}
+      POSTGRES_USER: ${TEST_DATABASE_USER}
+      POSTGRES_PASSWORD: ${TEST_DATABASE_PASSWORD}
+      POSTGRES_DB: ${TEST_DATABASE_NAME}
+      POSTGRES_PORT: ${TEST_DATABASE_PORT}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -32,7 +44,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - observability
+      - test
 
   pgadmin:
     image: dpage/pgadmin4
@@ -45,7 +57,11 @@ services:
     depends_on:
       - postgres
     networks:
-      - observability
+      - test
 
 volumes:
   pgdata:
+
+networks:
+  test:
+    driver: bridge
