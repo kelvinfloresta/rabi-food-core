@@ -6,7 +6,6 @@ import (
 	"rabi-food-core/domain"
 	g "rabi-food-core/libs/database/gateways/tenant_gateway"
 	"rabi-food-core/usecases/user_case"
-	"rabi-food-core/utils"
 )
 
 type CreateInput struct {
@@ -22,10 +21,6 @@ type CreateOutput struct {
 }
 
 func (c *TenantCase) Create(ctx context.Context, input CreateInput) (out CreateOutput, err error) {
-	if err = utils.Validator.Struct(input); err != nil {
-		return
-	}
-
 	tenantId, err := c.gateway.Create(g.CreateInput{
 		Name: input.Name,
 	})
