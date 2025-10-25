@@ -3,6 +3,7 @@ package user_controller
 import (
 	"rabi-food-core/libs/http/fiber_adapter/parser"
 	"rabi-food-core/usecases/user_case"
+	"rabi-food-core/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,6 +16,10 @@ func (c *UserController) Patch(ctx *fiber.Ctx) error {
 	data := user_case.PatchValues{}
 	if err := parser.ParseBody(ctx, &data); err != nil {
 		return ctx.JSON(err)
+	}
+
+	if err := utils.Validator.Struct(data); err != nil {
+		return err
 	}
 
 	updated, err := c.usecase.Patch(ctx.Context(), *filter, data)

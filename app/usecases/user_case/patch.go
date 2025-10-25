@@ -18,8 +18,8 @@ type PatchValues struct {
 	Street     string
 	Complement string
 	Name       string
-	Email      string
-	Photo      string
+	Email      string `validate:"omitempty,email"`
+	Photo      string `validate:"omitempty,url"`
 	TaxID      string
 }
 
