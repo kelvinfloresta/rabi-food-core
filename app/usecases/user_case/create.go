@@ -5,6 +5,7 @@ import (
 	"rabi-food-core/app_context"
 	"rabi-food-core/domain"
 	g "rabi-food-core/libs/database/gateways/user_gateway"
+	"rabi-food-core/libs/logger"
 )
 
 type CreateInput struct {
@@ -33,7 +34,7 @@ func (c *UserCase) Create(ctx context.Context, input *CreateInput) (string, erro
 		tenantId = input.TenantID
 	}
 
-	return c.gateway.Create(g.CreateInput{
+	id, err := c.gateway.Create(g.CreateInput{
 		TenantID:     tenantId,
 		City:         input.City,
 		State:        input.State,
@@ -49,4 +50,8 @@ func (c *UserCase) Create(ctx context.Context, input *CreateInput) (string, erro
 		Name:         input.Name,
 		Role:         domain.UserRole,
 	})
+
+	logger.L().Info().Str("tenant", tenantId).Str("user", session.UserID).Msg("user created")
+
+	return id, err
 }
