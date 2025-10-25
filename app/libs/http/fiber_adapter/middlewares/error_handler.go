@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"rabi-food-core/libs/logger"
 	"rabi-food-core/utils"
 
 	"github.com/go-playground/validator/v10"
@@ -17,6 +18,8 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 			Errors: utils.ParseValidationError(errs),
 		})
 	}
+
+	logger.L().Error().Err(err).Msg("internal server error")
 
 	return err
 }
