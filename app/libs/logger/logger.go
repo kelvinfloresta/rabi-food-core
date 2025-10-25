@@ -19,7 +19,7 @@ func init() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if config.Env == "dev" {
+	if config.Env != "production" {
 		base = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).With().Timestamp().Logger()
 	} else {
 		base = zerolog.New(os.Stdout).With().Timestamp().Logger()
