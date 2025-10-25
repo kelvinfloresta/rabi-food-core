@@ -66,6 +66,14 @@ tasks:
       - go run gotest.tools/gotestsum@v1.13.0 --format testname -- ./... -p 1 -v
     silent: false
 
+  test-with-logs:
+    desc: "Start the test environment with infrastructure logs"
+    dotenv: [".env.test"]
+    deps: [infra, infra-test]
+    dir: infra
+    cmds:
+      - docker compose -f docker-compose.test.yaml up
+
   # =============================
   # 🔧 Infrastructure utils
   # =============================
