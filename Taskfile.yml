@@ -81,3 +81,8 @@ tasks:
     cmds:
       - docker compose logs -f app
     interactive: true
+
+  clean_docker:
+    desc: "Prune all system and container resources"
+    cmds:
+      - docker system prune -a --volumes -f
