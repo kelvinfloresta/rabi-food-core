@@ -38,7 +38,7 @@ tasks:
     dir: infra
     dotenv: ["../.env.test"]
     cmds:
-      - docker compose -f docker-compose.test.yaml up -d postgres pgadmin
+      - docker compose -f docker-compose.infra-test.yaml up -d postgres pgadmin
     silent: false
 
   infra-test-down:
@@ -46,7 +46,7 @@ tasks:
     dir: infra
     dotenv: ["../.env.test"]
     cmds:
-      - docker compose -f docker-compose.test.yaml down
+      - docker compose -f docker-compose.infra-test.yaml down
     silent: true
 
   mockgen:
