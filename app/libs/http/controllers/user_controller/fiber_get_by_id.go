@@ -10,7 +10,6 @@ func (c *UserController) GetByID(ctx *fiber.Ctx) error {
 	data, err := c.usecase.GetByID(ctx.Context(), id)
 
 	if err != nil {
-		ctx.Context()
 		return err
 	}
 
