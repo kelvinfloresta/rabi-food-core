@@ -5,7 +5,6 @@ import (
 	"rabi-food-core/app_context"
 	"rabi-food-core/domain"
 	g "rabi-food-core/libs/database/gateways/user_gateway"
-	"rabi-food-core/utils"
 )
 
 type CreateInput struct {
@@ -25,9 +24,6 @@ type CreateInput struct {
 }
 
 func (c *UserCase) Create(ctx context.Context, input *CreateInput) (string, error) {
-	if err := utils.Validator.Struct(input); err != nil {
-		return "", err
-	}
 	session := app_context.GetSession(ctx)
 
 	tenantId := ""
