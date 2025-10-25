@@ -36,15 +36,15 @@ func Test_Unit_Create__should_not_fail_if_all_optional_fields_are_not_filled_in(
 
 	id, err := sut.Create(fixtures.DUMMY_CONTEXT, &user_case.CreateInput{
 		Name:         "Name",
-		TaxID:        "TaxID",
-		City:         "City",
-		State:        "State",
-		Phone:        "Phone",
-		ZIP:          "ZIP",
-		SocialID:     "SocialID",
 		Email:        "email@email.com",
-		Neighborhood: "Neighborhood",
-		Street:       "Street",
+		TaxID:        "",
+		City:         "",
+		State:        "",
+		Phone:        "",
+		ZIP:          "",
+		SocialID:     "",
+		Neighborhood: "",
+		Street:       "",
 		Photo:        "",
 		Complement:   "",
 	})
