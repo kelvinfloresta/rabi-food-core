@@ -50,7 +50,7 @@ func (t *TestSuite) Test_Integration_should_be_able_to_create() {
 		Neighborhood: "Neighborhood",
 		Street:       "Street",
 		Complement:   "Complement",
-		Photo:        "Photo",
+		Photo:        "http://example.com/photo.png",
 	}
 
 	httpexpect.Default(t.T(), fixtures.AppURL).
@@ -160,7 +160,7 @@ func (t *TestSuite) Test_Integration_should_be_able_to_update() {
 		State:      "NewState",
 		Complement: "NewComplement",
 		Name:       "NewName",
-		Photo:      "NewPhoto",
+		Photo:      "http://example.com/new-photo.png",
 	}
 
 	httpexpect.Default(t.T(), fixtures.AppURL).
@@ -189,7 +189,7 @@ func (t *TestSuite) Test_Integration_should_be_able_to_update() {
 			"city":       "NewCity",
 			"state":      "NewState",
 			"complement": "NewComplement",
-			"photo":      "NewPhoto",
+			"photo":      "http://example.com/new-photo.png",
 		})
 }
 

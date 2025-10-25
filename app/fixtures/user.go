@@ -20,7 +20,7 @@ func (userFixture) Create(t *testing.T, input *user_case.CreateInput, token stri
 	if Body == nil {
 		Body = &user_case.CreateInput{
 			Name:         "Name",
-			Photo:        "Photo",
+			Photo:        "http://example.com/photo.png",
 			TaxID:        "TaxID",
 			City:         "City",
 			State:        "State",

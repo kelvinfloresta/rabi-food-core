@@ -22,7 +22,7 @@ func (tenantFixture) Create(t *testing.T, input *tenant_case.CreateInput) *tenan
 		Body = &tenant_case.CreateInput{
 			Name:     "Name",
 			UserName: "UserName",
-			Phone:    "Phone",
+			Phone:    "http://example.com/photo.png",
 			Email:    "email@email.com",
 		}
 	}

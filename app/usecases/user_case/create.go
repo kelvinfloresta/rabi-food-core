@@ -12,7 +12,7 @@ type CreateInput struct {
 	Name         string `validate:"required"`
 	Email        string `validate:"required,email"`
 	TenantID     string
-	Photo        string
+	Photo        string `validate:"omitempty,url"`
 	TaxID        string
 	City         string
 	State        string
