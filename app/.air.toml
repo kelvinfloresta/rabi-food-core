@@ -1,8 +1,0 @@
-[build]
-cmd = "go build -o server ./cmd/server"
-bin = "server"
-include_ext = ["go"]
-exclude_dir = ["vendor", "tmp"]
-
-[run]
-cmd = "./server"
