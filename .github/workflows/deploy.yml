@@ -37,7 +37,7 @@ jobs:
           go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
 
       - name: Generate binary
-        run: go build -o rabi-food-core cmd/server/main.go
+        run: go build -o rabi-food-core main.go
 
       - name: Rename binary
         run: mv rabi-food-core rabi-food-core@latest
