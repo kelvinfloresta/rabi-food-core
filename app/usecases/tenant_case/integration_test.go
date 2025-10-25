@@ -3,6 +3,7 @@ package tenant_case_test
 import (
 	"net/http"
 	"rabi-food-core/fixtures"
+	"rabi-food-core/libs/http/fiber_adapter/middlewares"
 	"rabi-food-core/usecases/tenant_case"
 	"testing"
 
@@ -61,4 +62,31 @@ func (t *TestSuite) Test_TenantIntegration_Create() {
 			})
 	})
 
+	t.Run("should fail if required fields are empty", func() {
+		Body := tenant_case.CreateInput{}
+
+		response := &middlewares.ValidationErrorResponse{}
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Tenant.URI).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusBadRequest).
+			JSON().Decode(response)
+
+		t.Len(response.Errors, 4)
+		for _, e := range response.Errors {
+			switch e.Field {
+			case "Name":
+				t.Equal("required", e.Tag)
+			case "UserName":
+				t.Equal("required", e.Tag)
+			case "Phone":
+				t.Equal("required", e.Tag)
+			case "Email":
+				t.Equal("required", e.Tag)
+			default:
+				t.Fail("unexpected validation error field: " + e.Field)
+			}
+		}
+	})
 }
