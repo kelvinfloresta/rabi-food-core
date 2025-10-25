@@ -7,12 +7,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type ValidationErrorResponse struct {
+	Errors []utils.ValidationError `json:"errors"`
+}
+
 func ErrorHandler(ctx *fiber.Ctx, err error) error {
 	if errs, ok := err.(validator.ValidationErrors); ok {
-		return ctx.Status(fiber.StatusBadRequest).JSON(struct {
-			Errors []string `json:"errors"`
-		}{
-			Errors: utils.TranslateValidationErrors(errs),
+		return ctx.Status(fiber.StatusBadRequest).JSON(ValidationErrorResponse{
+			Errors: utils.ParseValidationError(errs),
 		})
 	}
 
