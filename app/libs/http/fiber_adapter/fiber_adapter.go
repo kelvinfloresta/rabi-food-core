@@ -6,6 +6,7 @@ import (
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/http"
 	"rabi-food-core/libs/http/controllers/auth_controller"
+	"rabi-food-core/libs/http/fiber_adapter/middlewares"
 	"rabi-food-core/libs/http/routes"
 	"rabi-food-core/libs/logger"
 
@@ -34,7 +35,8 @@ func (f *fiberAdapter) Stop() error {
 
 func newFiber(d database.Database) http.HTTPServer {
 	app := fiber.New(fiber.Config{
-		Immutable: true,
+		Immutable:    true,
+		ErrorHandler: middlewares.ErrorHandler,
 	})
 
 	tenantController := factories.NewTenant(d)

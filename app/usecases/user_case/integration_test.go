@@ -210,3 +210,22 @@ func (t *TestSuite) Test_Integration_should_be_able_to_delete() {
 		Expect().
 		Status(http.StatusNotFound)
 }
+
+func (t *TestSuite) Test_Integration_should_return_an_error_if_photo_is_invalid() {
+	tenant := fixtures.Tenant.Create(t.T(), nil)
+	token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+	Body := user_case.PatchValues{
+		Name:  "Name",
+		Email: "email@email.com",
+		Photo: "invalid-url",
+	}
+
+	httpexpect.Default(t.T(), fixtures.AppURL).
+		Request(http.MethodPost, fixtures.User.URI).
+		WithHeader("Authorization", "Bearer "+token).
+		WithJSON(Body).
+		Expect().
+		Status(http.StatusBadRequest).
+		Body().Contains("Photo").Contains("URL")
+}
