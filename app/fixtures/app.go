@@ -34,19 +34,19 @@ func NewApp() *App {
 func (a *App) Start(t *testing.T) {
 	t.Helper()
 
-	go func() {
-		err := a.database.Start()
-		if err != nil {
-			panic(fmt.Sprintf("Could not start the database: %v", err))
-		}
+	err := a.database.Start()
+	if err != nil {
+		require.NoError(t, err, "could not start the database")
+	}
 
-		err = a.http.Start()
+	go func() {
+		err := a.http.Start()
 		if err != nil {
 			panic(fmt.Sprintf("Could not start the server: %v", err))
 		}
 	}()
 
-	err := waitForServer()
+	err = waitForServer()
 	require.NoError(t, err)
 }
 
