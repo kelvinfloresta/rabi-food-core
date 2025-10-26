@@ -2,6 +2,8 @@ services:
   app-test:
     image: golang:1.25-alpine
     container_name: app-test
+    env_file:
+      - ../.env.test
     environment:
       - TEST_DATABASE_HOST=postgres
     volumes:
