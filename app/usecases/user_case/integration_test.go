@@ -20,7 +20,7 @@ type TestSuite struct {
 
 func (t *TestSuite) SetupSuite() {
 	t.app = fixtures.NewApp()
-	t.app.Start()
+	t.app.Start(t.T())
 }
 
 func (t *TestSuite) SetupTest() {
@@ -28,7 +28,7 @@ func (t *TestSuite) SetupTest() {
 }
 
 func (t *TestSuite) TearDownSuite() {
-	t.app.Stop()
+	t.app.Stop(t.T())
 }
 
 func TestMySuite(t *testing.T) {

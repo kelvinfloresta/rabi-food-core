@@ -6,8 +6,10 @@ import (
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/http"
-	"rabi-food-core/libs/logger"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -28,27 +30,28 @@ func NewApp() *App {
 	}
 }
 
-func (a *App) Start() {
+func (a *App) Start(t *testing.T) {
 	go func() {
 		if err := a.database.Start(); err != nil {
-			panic(err)
+			panic(fmt.Sprintf("Could not start the database: %v", err))
 		}
 
 		if err := a.http.Start(); err != nil {
-			logger.L().Error().Msg("Could not start the server")
+			panic(fmt.Sprintf("Could not start the server: %v", err))
 		}
 	}()
 
-	waitForServer()
+	err := waitForServer()
+	require.NoError(t, err)
 }
 
-func (a *App) Stop() {
+func (a *App) Stop(t *testing.T) {
 	if err := a.http.Stop(); err != nil {
-		logger.L().Error().Msg("Could not stop the server")
+		require.NoError(t, err)
 	}
 
 	if err := a.database.Stop(); err != nil {
-		logger.L().Error().Msg("Could not stop the database")
+		require.NoError(t, err)
 	}
 }
 
