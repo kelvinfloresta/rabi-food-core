@@ -5,7 +5,6 @@ import (
 )
 
 var (
-	TestPort     = testEnv("APP_PORT", "3000")
 	TestDatabase = &DatabaseConfig{
 		Host:         testEnv("TEST_DATABASE_HOST", "localhost"),
 		User:         testEnv("TEST_DATABASE_USER", "postgres"),

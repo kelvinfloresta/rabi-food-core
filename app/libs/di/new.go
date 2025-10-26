@@ -17,6 +17,10 @@ import (
 	"github.com/samber/do"
 )
 
+var (
+	ErrHTTPPortNotConfigured = errors.New("HTTP port is not configured")
+)
+
 func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 	injector := do.New()
 
@@ -41,7 +45,11 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 		tenantController := do.MustInvoke[*tenant_controller.TenantController](i)
 		userController := do.MustInvoke[*user_controller.UserController](i)
 
-		return fiber_adapter.New(config.Port, tenantController, userController), nil
+		if config.AppPort == "" {
+			return nil, ErrHTTPPortNotConfigured
+		}
+
+		return fiber_adapter.New(config.AppPort, tenantController, userController), nil
 	})
 
 	// User dependencies
