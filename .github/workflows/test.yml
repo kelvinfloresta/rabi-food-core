@@ -9,6 +9,9 @@ on:
 
 jobs:
   Test:
+    defaults:
+      run:
+        working-directory: app
     runs-on: ubuntu-latest
     container: golang:1.25.0
     env:
