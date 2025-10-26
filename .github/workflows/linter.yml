@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod' # Use the Go version specified in go.mod
+          go-version-file: 'app/go.mod' # Use the Go version specified in go.mod
           cache: true
 
       - name: Install golangci-lint
