@@ -5,11 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Test Setup",
+            "name": "HTTP Server",
             "type": "go",
             "request": "launch",
+            "envFile": "${workspaceFolder}/.env.test",
             "mode": "auto",
-            "program": "${workspaceFolder}/cmd/test_setup/test_setup.go"
+            "program": "${workspaceFolder}/app/main.go"
         }
     ]
 }
