@@ -13,8 +13,8 @@ type TenantCase struct {
 func New(
 	gateway g.TenantGateway,
 	userCase *user_case.UserCase,
-) TenantCase {
-	return TenantCase{
+) *TenantCase {
+	return &TenantCase{
 		gateway:  gateway,
 		userCase: userCase,
 	}
