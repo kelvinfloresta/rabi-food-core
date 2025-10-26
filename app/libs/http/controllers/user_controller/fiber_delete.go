@@ -1,6 +1,8 @@
 package user_controller
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -13,8 +15,8 @@ func (c *UserController) Delete(ctx *fiber.Ctx) error {
 	}
 
 	if deleted {
-		return ctx.SendStatus(204)
+		return ctx.SendStatus(http.StatusNoContent)
 	}
 
-	return ctx.SendStatus(404)
+	return ctx.SendStatus(http.StatusNotFound)
 }

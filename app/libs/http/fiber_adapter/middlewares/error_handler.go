@@ -8,12 +8,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// ValidationErrorResponse represents the structure of validation error responses.
+// It is used to return detailed information about validation errors to the client.
 type ValidationErrorResponse struct {
 	Errors []lib.ValidationError `json:"errors"`
 }
 
+// ErrorHandler is a middleware that handles errors occurring during request processing.
 func ErrorHandler(ctx *fiber.Ctx, err error) error {
-	if errs, ok := err.(validator.ValidationErrors); ok {
+	//nolint:errorlint
+	errs, ok := err.(validator.ValidationErrors)
+	if ok {
 		return ctx.Status(fiber.StatusBadRequest).JSON(ValidationErrorResponse{
 			Errors: lib.ParseValidationError(errs),
 		})

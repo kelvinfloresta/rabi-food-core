@@ -1,6 +1,8 @@
 package user_controller
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,7 +16,7 @@ func (c *UserController) GetByID(ctx *fiber.Ctx) error {
 	}
 
 	if data == nil {
-		return ctx.SendStatus(404)
+		return ctx.SendStatus(http.StatusNotFound)
 	}
 
 	return ctx.JSON(data)

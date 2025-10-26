@@ -8,5 +8,6 @@ func (g *GormTenantGatewayAdapter) Patch(filter PatchFilter, newValues PatchValu
 	query := g.DB.Conn.Model(&models.Tenant{}).Where("id = ?", filter.ID)
 
 	result := query.Updates(newValues)
+
 	return result.RowsAffected > 0, result.Error
 }

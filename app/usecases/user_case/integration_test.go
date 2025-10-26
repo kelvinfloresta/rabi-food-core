@@ -15,6 +15,7 @@ import (
 
 type TestSuite struct {
 	suite.Suite
+
 	app *fixtures.App
 }
 
@@ -24,7 +25,7 @@ func (t *TestSuite) SetupSuite() {
 }
 
 func (t *TestSuite) SetupTest() {
-	fixtures.CleanDatabase()
+	fixtures.CleanDatabase(t.T())
 }
 
 func (t *TestSuite) TearDownSuite() {
@@ -85,7 +86,7 @@ func (t *TestSuite) Test_UserIntegration_Create() {
 			Complement:   "Complement",
 		}
 
-		response := &middlewares.ValidationErrorResponse{}
+		response := new(middlewares.ValidationErrorResponse)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.User.URI).
 			WithHeader("Authorization", "Bearer "+token).
@@ -149,7 +150,7 @@ func (t *TestSuite) Test_UserIntegration_Create() {
 			Photo: "invalid-url",
 		}
 
-		response := &middlewares.ValidationErrorResponse{}
+		response := new(middlewares.ValidationErrorResponse)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.User.URI).
 			WithHeader("Authorization", "Bearer "+token).
@@ -203,7 +204,7 @@ func (t *TestSuite) Test_UserIntegration_Paginate() {
 		})
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			fixtures.User.Create(t.T(), &user_case.CreateInput{
 				Name:  EXPECTED_NAME,
 				Email: "email@email.com",
@@ -212,13 +213,13 @@ func (t *TestSuite) Test_UserIntegration_Paginate() {
 
 		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
 
-		response := user_gateway.PaginateOutput{}
+		response := new(user_gateway.PaginateOutput)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodGet, fixtures.User.URI).
 			WithHeader("Authorization", "Bearer "+backofficeToken).
 			Expect().
 			Status(http.StatusOK).
-			JSON().Decode(&response)
+			JSON().Decode(response)
 
 		t.Len(response.Data, 6)
 		t.Equal(1, response.MaxPages)
@@ -227,14 +228,13 @@ func (t *TestSuite) Test_UserIntegration_Paginate() {
 			t.NotEmpty(user.ID)
 			t.Equal(EXPECTED_NAME, user.Name)
 		}
-
 	})
 
 	t.Run("should not be able to paginate if is a common user", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			fixtures.User.Create(t.T(), nil, token)
 		}
 

@@ -6,6 +6,7 @@ import (
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,8 +14,8 @@ import (
 )
 
 var (
-	appHost = fmt.Sprintf("localhost:%s", config.TestPort)
-	AppURL  = fmt.Sprintf("http://%s", appHost)
+	appHost = "localhost:" + config.TestPort
+	AppURL  = "http://" + appHost
 )
 
 type App struct {
@@ -24,6 +25,7 @@ type App struct {
 
 func NewApp() *App {
 	time.Local = time.UTC
+
 	return &App{
 		http:     testHTTPServer,
 		database: testDB,
@@ -31,30 +33,34 @@ func NewApp() *App {
 }
 
 func (a *App) Start(t *testing.T) {
-	go func() {
-		if err := a.database.Start(); err != nil {
-			panic(fmt.Sprintf("Could not start the database: %v", err))
-		}
+	t.Helper()
+	wg := sync.WaitGroup{}
 
-		if err := a.http.Start(); err != nil {
-			panic(fmt.Sprintf("Could not start the server: %v", err))
-		}
-	}()
+	dbErr := error(nil)
+	httpErr := error(nil)
+	wg.Go(func() {
+		httpErr = a.http.Start()
+		dbErr = a.database.Start()
+	})
 
 	err := waitForServer()
 	require.NoError(t, err)
+	wg.Wait()
+
+	require.NoError(t, dbErr, "failed to start database")
+	require.NoError(t, httpErr, "failed to start HTTP server")
 }
 
 func (a *App) Stop(t *testing.T) {
-	if err := a.http.Stop(); err != nil {
-		require.NoError(t, err)
-	}
+	t.Helper()
+	err := a.http.Stop()
+	require.NoError(t, err)
 
-	if err := a.database.Stop(); err != nil {
-		require.NoError(t, err)
-	}
+	err = a.database.Stop()
+	require.NoError(t, err)
 }
 
+//nolint:mnd
 func waitForServer() error {
 	timeout := 60 * time.Second
 	deadline := time.Now().Add(timeout)
@@ -62,9 +68,12 @@ func waitForServer() error {
 		conn, err := net.DialTimeout("tcp", appHost, 500*time.Millisecond)
 		if err == nil {
 			_ = conn.Close()
+
 			return nil
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
+
+	//nolint:err113
 	return fmt.Errorf("server %s did not start within %s", appHost, timeout)
 }

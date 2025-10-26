@@ -1,10 +1,29 @@
+version: "2"
 run:
   timeout: 5m
 linters:
-  enable:
-    - govet
-    - staticcheck
-    - gofmt
+  disable:
+    - depguard
+    - wrapcheck
+    - wsl_v5
+    - wsl
+    - varnamelen
     - revive
-issues:
-  exclude-use-default: false
+    - paralleltest
+    - nonamedreturns
+    - nilnil
+    - ireturn
+    - gosmopolitan
+    - gochecknoglobals
+    - gochecknoinits
+    - funlen
+    - exhaustruct
+    - noctx
+  # Default set of linters.
+  # The value can be:
+  # - `standard`: https://golangci-lint.run/docs/linters/#enabled-by-default
+  # - `all`: enables all linters by default.
+  # - `none`: disables all linters by default.
+  # - `fast`: enables only linters considered as "fast" (`golangci-lint help linters --json | jq '[ .[] | select(.fast==true) ] | map(.name)'`).
+  # Default: standard
+  default: all

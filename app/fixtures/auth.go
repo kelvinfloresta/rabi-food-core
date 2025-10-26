@@ -15,6 +15,8 @@ type authFixture struct{}
 var Auth = authFixture{}
 
 func (*authFixture) BackofficeToken(t *testing.T, userId string) string {
+	t.Helper()
+
 	claims := jwt.MapClaims{
 		"user_id":          userId,
 		"tenant_id":        "system",
@@ -27,12 +29,13 @@ func (*authFixture) BackofficeToken(t *testing.T, userId string) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tk, err := token.SignedString([]byte(config.AuthSecret))
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	return tk
 }
 
 func (auth *authFixture) UserToken(t *testing.T, id string) string {
+	t.Helper()
 	backofficeTk := auth.BackofficeToken(t, id)
 	user, statusCode := User.GetByID(t, id, backofficeTk)
 	require.Equal(t, http.StatusOK, statusCode)

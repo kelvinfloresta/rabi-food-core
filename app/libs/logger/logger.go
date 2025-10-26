@@ -26,15 +26,17 @@ func init() {
 	}
 }
 
-// Get retorna o logger da requisição atual
+// Get retrieves the logger from the given context.
 func Get(c context.Context) *zerolog.Logger {
 	v := c.Value(LoggerKey)
 	if l, ok := v.(*zerolog.Logger); ok {
 		return l
 	}
+
 	return L()
 }
 
+// L returns the base logger instance.
 func L() *zerolog.Logger {
 	return &base
 }

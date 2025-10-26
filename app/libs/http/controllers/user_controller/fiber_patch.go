@@ -1,6 +1,7 @@
 package user_controller
 
 import (
+	"net/http"
 	"rabi-food-core/libs/http/fiber_adapter/parser"
 	"rabi-food-core/libs/validator"
 	"rabi-food-core/usecases/user_case"
@@ -14,11 +15,13 @@ func (c *UserController) Patch(ctx *fiber.Ctx) error {
 	}
 
 	data := user_case.PatchValues{}
-	if err := parser.ParseBody(ctx, &data); err != nil {
+	err := parser.ParseBody(ctx, &data)
+	if err != nil {
 		return ctx.JSON(err)
 	}
 
-	if err := validator.V.Struct(data); err != nil {
+	err = validator.V.Struct(data)
+	if err != nil {
 		return err
 	}
 
@@ -29,8 +32,8 @@ func (c *UserController) Patch(ctx *fiber.Ctx) error {
 	}
 
 	if updated {
-		return ctx.SendStatus(200)
+		return ctx.SendStatus(http.StatusOK)
 	}
 
-	return ctx.SendStatus(404)
+	return ctx.SendStatus(http.StatusNotFound)
 }

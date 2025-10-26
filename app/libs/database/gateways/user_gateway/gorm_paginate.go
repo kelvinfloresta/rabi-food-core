@@ -6,7 +6,10 @@ import (
 	"rabi-food-core/libs/database/gorm_adapter/models"
 )
 
-func (g *GormUserGatewayAdapter) Paginate(filter PaginateFilter, paginate database.PaginateInput) (PaginateOutput, error) {
+func (g *GormUserGatewayAdapter) Paginate(
+	filter PaginateFilter,
+	paginate database.PaginateInput,
+) (PaginateOutput, error) {
 	query := g.DB.Conn.Model(&models.User{})
 
 	if filter.Name != nil {
