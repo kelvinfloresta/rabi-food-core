@@ -1,8 +1,8 @@
 package tenant_controller
 
 import (
+	"rabi-food-core/libs/validator"
 	"rabi-food-core/usecases/tenant_case"
-	"rabi-food-core/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,7 +13,7 @@ func (c *TenantController) Create(ctx *fiber.Ctx) error {
 		return ctx.JSON(err)
 	}
 
-	if err := utils.Validator.Struct(data); err != nil {
+	if err := validator.V.Struct(data); err != nil {
 		return err
 	}
 
