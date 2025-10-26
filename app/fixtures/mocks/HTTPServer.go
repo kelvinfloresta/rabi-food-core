@@ -9,17 +9,17 @@ type HTTPServer struct {
 	mock.Mock
 }
 
-// Start provides a mock function with given fields: port
-func (_m *HTTPServer) Start(port string) error {
-	ret := _m.Called(port)
+// Start provides a mock function with no fields
+func (_m *HTTPServer) Start() error {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Start")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(port)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}
