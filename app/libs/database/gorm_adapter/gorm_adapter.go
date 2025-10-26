@@ -5,6 +5,7 @@ import (
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/database/gorm_adapter/models"
+	"rabi-food-core/libs/logger"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -33,6 +34,7 @@ func (g *GormAdapter) Migrate() error {
 func (g *GormAdapter) Connect() error {
 	time.Local = time.UTC
 
+	logger.L().Info().Msg("Connecting to database with DSN: " + g.config.String())
 	dsn := parseDSN(g.config)
 	db, err := gorm.Open(postgres.Open(dsn))
 
@@ -47,14 +49,16 @@ func (g *GormAdapter) Connect() error {
 
 // CreateDatabase creates the database if it does not exist.
 func (g *GormAdapter) CreateDatabase() error {
-	var dsn = parseDSN(&config.DatabaseConfig{
+	dbConfig := &config.DatabaseConfig{
 		Host:         g.config.Host,
 		User:         g.config.User,
 		Password:     g.config.Password,
 		Port:         g.config.Port,
 		DatabaseName: "postgres",
-	})
+	}
 
+	logger.L().Info().Msg("Creating database with DSN: " + dbConfig.String())
+	var dsn = parseDSN(dbConfig)
 	conn, err := gorm.Open(postgres.Open(dsn))
 	if err != nil {
 		return err
@@ -114,16 +118,13 @@ func (g *GormAdapter) Stop() error {
 }
 
 func parseDSN(d *config.DatabaseConfig) string {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s port=%s",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s port=%s database=%s",
 		d.Host,
 		d.User,
 		d.Password,
 		d.Port,
+		d.DatabaseName,
 	)
-
-	if d.DatabaseName != "" {
-		return fmt.Sprintf("%s database=%s", dsn, d.DatabaseName)
-	}
 
 	return dsn
 }

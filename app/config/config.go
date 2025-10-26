@@ -22,3 +22,7 @@ type DatabaseConfig struct {
 	DatabaseName string
 	Port         string
 }
+
+func (d DatabaseConfig) String() string {
+	return "host=" + d.Host + " user=" + d.User + " port=" + d.Port + " database=" + d.DatabaseName + " password=**"
+}
