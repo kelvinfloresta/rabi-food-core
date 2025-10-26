@@ -2,10 +2,9 @@ package fiber_adapter
 
 import (
 	"rabi-food-core/config"
-	"rabi-food-core/factories"
-	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/http"
-	"rabi-food-core/libs/http/controllers/auth_controller"
+	"rabi-food-core/libs/http/controllers/tenant_controller"
+	"rabi-food-core/libs/http/controllers/user_controller"
 	"rabi-food-core/libs/http/fiber_adapter/middlewares"
 	"rabi-food-core/libs/http/routes"
 	"rabi-food-core/libs/logger"
@@ -18,31 +17,24 @@ import (
 )
 
 type fiberAdapter struct {
-	app *fiber.App
+	port string
+	app  *fiber.App
 }
 
-func New(d database.Database) http.HTTPServer {
-	return newFiber(d)
-}
-
-func (f *fiberAdapter) Start(port string) error {
-	return f.app.Listen(":" + port)
-}
-
-func (f *fiberAdapter) Stop() error {
-	return f.app.Shutdown()
-}
-
-func newFiber(d database.Database) http.HTTPServer {
+func New(
+	port string,
+	tenantController *tenant_controller.TenantController,
+	userController *user_controller.UserController,
+) http.HTTPServer {
 	app := fiber.New(fiber.Config{
 		Immutable:    true,
 		ErrorHandler: middlewares.ErrorHandler,
 	})
 
-	tenantController := factories.NewTenant(d)
 	jwtMiddleware := jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{Key: []byte(config.AuthSecret)},
 	})
+
 	requestIDMiddleware := requestid.New(requestid.Config{
 		ContextKey: logger.LoggerKey,
 	})
@@ -52,10 +44,21 @@ func newFiber(d database.Database) http.HTTPServer {
 		Use(requestIDMiddleware).
 		Post("/tenant", tenantController.Create).
 		Use(jwtMiddleware).
-		Use(auth_controller.Session)
+		Use(middlewares.Session)
 
-	routes.User(app, factories.NewUser(d))
+	routes.User(app, userController)
 	routes.Tenant(app, tenantController)
 
-	return &fiberAdapter{app}
+	return &fiberAdapter{
+		app:  app,
+		port: port,
+	}
+}
+
+func (f *fiberAdapter) Start() error {
+	return f.app.Listen(":" + f.port)
+}
+
+func (f *fiberAdapter) Stop() error {
+	return f.app.Shutdown()
 }
