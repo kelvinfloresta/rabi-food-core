@@ -4,6 +4,17 @@ version: '3'
 
 tasks:
   # =============================
+  # 🛠️ Development environment
+  # =============================
+  dev:
+    desc: "Start the development environment"
+    dir: app
+    dotenv: ["../.env.test"]
+    cmds:
+      - go run main.go
+    silent: false
+
+  # =============================
   # 🚀 Production build and run
   # =============================
   build:
