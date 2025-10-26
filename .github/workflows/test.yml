@@ -43,7 +43,10 @@ jobs:
           go-version-file: 'app/go.mod'
           cache: true
 
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
       - name: Run Tests
         run: |
           cd app
-          go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
+          gotestsum --format testname -- ./... -p 1 -v
