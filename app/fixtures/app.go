@@ -35,11 +35,13 @@ func (a *App) Start(t *testing.T) {
 	t.Helper()
 
 	go func() {
-		if err := a.database.Start(); err != nil {
+		err := a.database.Start()
+		if err != nil {
 			panic(fmt.Sprintf("Could not start the database: %v", err))
 		}
 
-		if err := a.http.Start(); err != nil {
+		err = a.http.Start()
+		if err != nil {
 			panic(fmt.Sprintf("Could not start the server: %v", err))
 		}
 	}()
