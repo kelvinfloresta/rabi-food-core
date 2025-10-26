@@ -6,7 +6,6 @@ import (
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/http"
-	"rabi-food-core/libs/http/fiber_adapter"
 	"rabi-food-core/libs/logger"
 	"time"
 )
@@ -23,10 +22,9 @@ type App struct {
 
 func NewApp() *App {
 	time.Local = time.UTC
-
 	return &App{
-		http:     fiber_adapter.New(TestDatabase),
-		database: TestDatabase,
+		http:     testHTTPServer,
+		database: testDB,
 	}
 }
 
@@ -36,7 +34,7 @@ func (a *App) Start() {
 			panic(err)
 		}
 
-		if err := a.http.Start(config.TestPort); err != nil {
+		if err := a.http.Start(); err != nil {
 			logger.L().Error().Msg("Could not start the server")
 		}
 	}()
