@@ -29,7 +29,6 @@ jobs:
         with:
           working-directory: app
           version: v2.5.0
-          args: --timeout=5m --path-mode=abs --output.format=checkstyle --output.path=golangci-lint.xml
 
       - name: Run golangci-lint with Reviewdog
         uses: reviewdog/action-golangci-lint@v2
