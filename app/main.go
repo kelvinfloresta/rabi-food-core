@@ -2,8 +2,8 @@ package main
 
 import (
 	"rabi-food-core/config"
-	"rabi-food-core/di"
 	"rabi-food-core/libs/database"
+	"rabi-food-core/libs/di"
 	"rabi-food-core/libs/http"
 	"time"
 
