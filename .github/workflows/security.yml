@@ -8,14 +8,26 @@ on:
       - staging
 
 jobs:
-  Gosec:
+  gosec:
+    name: runner / gosec
     runs-on: ubuntu-latest
 
     steps:
-      - name: Fetch Repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Run Gosec
-        uses: securego/gosec@master
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          args: ./...
+          go-version-file: 'app/go.mod'
+          cache: true
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@v2
+        with:
+          args: ./app/... -fmt=sarif -out=gosec.sarif
+
+      - name: Upload Gosec SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gosec.sarif
