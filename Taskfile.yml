@@ -79,7 +79,7 @@ tasks:
 
   test-with-logs:
     desc: "Start the test environment with infrastructure logs"
-    dotenv: [".env.test"]
+    dotenv: ["../.env.test"]
     deps: [infra, infra-test]
     dir: infra
     cmds:
