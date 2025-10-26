@@ -13,7 +13,7 @@ jobs:
       run:
         working-directory: app
     runs-on: ubuntu-latest
-    container: golang:1.25.0
+
     env:
       APP_PORT: 3000
       TEST_DATABASE_HOST: postgres
@@ -35,7 +35,13 @@ jobs:
 
     steps:
       - name: Fetch Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v6.0.0
+        with:
+          go-version-file: 'app/go.mod'
+          cache: true
 
       - name: Run Test
         run: |
