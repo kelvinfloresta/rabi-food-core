@@ -1,6 +1,7 @@
 package di
 
 import (
+	"errors"
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/database/gateways/tenant_gateway"
@@ -21,7 +22,11 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 
 	// Database
 	do.Provide(injector, func(i *do.Injector) (*gorm_adapter.GormAdapter, error) {
-		return gorm_adapter.New(dbConfig), nil
+		db, ok := gorm_adapter.New(dbConfig).(*gorm_adapter.GormAdapter)
+		if !ok {
+			return nil, errors.New("failed to cast database adapter")
+		}
+		return db, nil
 	})
 
 	// Database as interface
