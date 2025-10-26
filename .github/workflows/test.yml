@@ -9,15 +9,13 @@ on:
 
 jobs:
   Test:
-    defaults:
-      run:
-        working-directory: app
     runs-on: ubuntu-latest
 
     env:
       APP_PORT: 3000
       TEST_DATABASE_HOST: postgres
       TEST_DATABASE_USER: postgres
+      TEST_DATABASE_NAME: rabi_food_test
       TEST_DATABASE_PASSWORD: postgres
       TEST_DATABASE_PORT: 5432
 
@@ -45,6 +43,7 @@ jobs:
           go-version-file: 'app/go.mod'
           cache: true
 
-      - name: Run Test
+      - name: Run Tests
         run: |
+          cd app
           go run gotest.tools/gotestsum@latest --format testname -- ./... -p 1 -v
