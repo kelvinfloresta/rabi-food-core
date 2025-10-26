@@ -10,9 +10,6 @@ on:
 jobs:
   golangci-lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
 
     steps:
       - name: Checkout repository
@@ -27,6 +24,7 @@ jobs:
       - name: Install golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
+          working-directory: app
           version: v1.59.1
           args: --timeout=5m --out-format=checkstyle:golangci-lint.xml
 
@@ -38,4 +36,4 @@ jobs:
           golangci_lint_flags: --timeout=5m
           level: warning
           reporter: github-pr-review # Make a comment on the PR
-          fail_on_error: true
+          fail_level: any
