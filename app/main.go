@@ -2,11 +2,13 @@ package main
 
 import (
 	"rabi-food-core/config"
-	"rabi-food-core/libs/database/gorm_adapter"
-	"rabi-food-core/libs/http/fiber_adapter"
+	"rabi-food-core/di"
+	"rabi-food-core/libs/database"
+	"rabi-food-core/libs/http"
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/samber/do"
 )
 
 func main() {
@@ -14,15 +16,16 @@ func main() {
 	log.Info().Str("env", config.Env).Msg("Environment")
 
 	time.Local = time.UTC
-	db := gorm_adapter.New(config.ProductionDatabase)
 
+	injector := di.NewProduction()
+	db := do.MustInvoke[database.Database](injector)
 	if err := db.Start(); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start database")
 	}
 
-	httpServer := fiber_adapter.New(db)
+	httpServer := do.MustInvoke[http.HTTPServer](injector)
 
-	if err := httpServer.Start(config.Port); err != nil {
+	if err := httpServer.Start(); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start HTTP server")
 	}
 }
