@@ -20,7 +20,8 @@ func (c *UserController) Paginate(ctx *fiber.Ctx) error {
 	}
 
 	filter := user_case.PaginateFilter{}
-	if err = ctx.QueryParser(&filter); err != nil {
+	err = ctx.QueryParser(&filter)
+	if err != nil {
 		return err
 	}
 

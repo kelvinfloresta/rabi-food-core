@@ -13,7 +13,7 @@ type PatchValues struct {
 	Name string
 }
 
-func (c TenantCase) Patch(ctx context.Context, filter PatchFilter, values PatchValues) (bool, error) {
+func (c *TenantCase) Patch(ctx context.Context, filter PatchFilter, values PatchValues) (bool, error) {
 	return c.gateway.Patch(
 		g.PatchFilter{ID: filter.ID},
 		g.PatchValues{Name: values.Name},

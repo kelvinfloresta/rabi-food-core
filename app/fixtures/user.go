@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gavv/httpexpect/v2"
+	"github.com/stretchr/testify/require"
 )
 
 type userFixture struct {
@@ -16,6 +17,7 @@ type userFixture struct {
 var User = userFixture{"/user/"}
 
 func (userFixture) Create(t *testing.T, input *user_case.CreateInput, token string) string {
+	t.Helper()
 	Body := input
 	if Body == nil {
 		Body = &user_case.CreateInput{
@@ -47,15 +49,20 @@ func (userFixture) Create(t *testing.T, input *user_case.CreateInput, token stri
 }
 
 func (userFixture) GetByID(t *testing.T, id string, token string) (user_gateway.GetByIDOutput, int) {
+	t.Helper()
 	found := user_gateway.GetByIDOutput{}
 
 	obj := httpexpect.Default(t, AppURL).
 		Request(http.MethodGet, User.URI+id).
 		WithHeader("Authorization", "Bearer "+token).
-		Expect()
+		Expect().Status(http.StatusOK)
 
-	response := obj.Status(http.StatusOK).Raw()
+	response := obj.Raw()
+
 	obj.JSON().Object().Decode(&found)
+
+	err := response.Body.Close()
+	require.NoError(t, err)
 
 	return found, response.StatusCode
 }

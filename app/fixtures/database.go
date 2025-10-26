@@ -2,7 +2,9 @@ package fixtures
 
 import (
 	"rabi-food-core/libs/database/gorm_adapter/models"
+	"testing"
 
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm/logger"
 )
 
@@ -10,17 +12,16 @@ var tables = []string{
 	models.User{}.TableName(),
 }
 
-func CleanDatabase() {
+func CleanDatabase(t *testing.T) {
+	t.Helper()
 	if testDB.Conn == nil {
-		if err := testDB.Connect(); err != nil {
-			panic(err)
-		}
+		err := testDB.Connect()
+		require.NoError(t, err)
 	}
 
-	testDB.Conn.Config.Logger = logger.Default.LogMode(logger.Info)
+	testDB.Conn.Logger = logger.Default.LogMode(logger.Info)
 	for _, table := range tables {
-		if err := testDB.Conn.Exec("TRUNCATE " + table + " CASCADE").Error; err != nil {
-			panic(err)
-		}
+		err := testDB.Conn.Exec("TRUNCATE " + table + " CASCADE").Error
+		require.NoError(t, err)
 	}
 }

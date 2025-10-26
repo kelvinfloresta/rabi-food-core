@@ -1,7 +1,6 @@
 package fixtures
 
 import (
-	"fmt"
 	"net/http"
 	"rabi-food-core/usecases/tenant_case"
 	"testing"
@@ -17,6 +16,7 @@ type tenantFixture struct {
 var Tenant = tenantFixture{"/tenant/"}
 
 func (tenantFixture) Create(t *testing.T, input *tenant_case.CreateInput) *tenant_case.CreateOutput {
+	t.Helper()
 	Body := input
 	if Body == nil {
 		Body = &tenant_case.CreateInput{
@@ -35,7 +35,7 @@ func (tenantFixture) Create(t *testing.T, input *tenant_case.CreateInput) *tenan
 		JSON().Object().
 		Decode(output)
 
-	require.NotEqual(t, output, &tenant_case.CreateOutput{}, fmt.Sprintf("reponse: %s", output))
+	require.NotEqual(t, &tenant_case.CreateOutput{}, output)
 
 	return output
 }

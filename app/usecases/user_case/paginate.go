@@ -14,10 +14,15 @@ type PaginateFilter struct {
 }
 
 var EMPTY_PAGINATION = g.PaginateOutput{
-	Data: []g.PaginateData{},
+	Data:     []g.PaginateData{},
+	MaxPages: 0,
 }
 
-func (c *UserCase) Paginate(ctx context.Context, input PaginateFilter, paginate database.PaginateInput) (g.PaginateOutput, error) {
+func (c *UserCase) Paginate(
+	ctx context.Context,
+	input PaginateFilter,
+	paginate database.PaginateInput,
+) (g.PaginateOutput, error) {
 	session := app_context.GetSession(ctx)
 	if session.Role.IsUser() {
 		return EMPTY_PAGINATION, nil

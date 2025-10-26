@@ -2,6 +2,7 @@ package models
 
 import "rabi-food-core/domain"
 
+// User represents the user model in the database.
 type User struct {
 	ID           string `gorm:"type:uuid"`
 	SocialID     string

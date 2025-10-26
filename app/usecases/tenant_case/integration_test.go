@@ -13,6 +13,7 @@ import (
 
 type TestSuite struct {
 	suite.Suite
+
 	app *fixtures.App
 }
 
@@ -22,7 +23,7 @@ func (t *TestSuite) SetupSuite() {
 }
 
 func (t *TestSuite) SetupTest() {
-	fixtures.CleanDatabase()
+	fixtures.CleanDatabase(t.T())
 }
 
 func (t *TestSuite) TearDownSuite() {
@@ -65,7 +66,7 @@ func (t *TestSuite) Test_TenantIntegration_Create() {
 	t.Run("should fail if required fields are empty", func() {
 		Body := tenant_case.CreateInput{}
 
-		response := &middlewares.ValidationErrorResponse{}
+		response := new(middlewares.ValidationErrorResponse)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.Tenant.URI).
 			WithJSON(Body).

@@ -1,6 +1,7 @@
 package tenant_controller
 
 import (
+	"net/http"
 	"rabi-food-core/libs/validator"
 	"rabi-food-core/usecases/tenant_case"
 
@@ -9,11 +10,13 @@ import (
 
 func (c *TenantController) Create(ctx *fiber.Ctx) error {
 	data := tenant_case.CreateInput{}
-	if err := ctx.BodyParser(&data); err != nil {
+	err := ctx.BodyParser(&data)
+	if err != nil {
 		return ctx.JSON(err)
 	}
 
-	if err := validator.V.Struct(data); err != nil {
+	err = validator.V.Struct(data)
+	if err != nil {
 		return err
 	}
 
@@ -23,5 +26,5 @@ func (c *TenantController) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.Status(201).JSON(output)
+	return ctx.Status(http.StatusCreated).JSON(output)
 }

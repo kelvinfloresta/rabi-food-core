@@ -1,6 +1,7 @@
 package tenant_controller
 
 import (
+	"net/http"
 	"rabi-food-core/libs/http/fiber_adapter/parser"
 	"rabi-food-core/usecases/tenant_case"
 
@@ -14,7 +15,8 @@ func (c *TenantController) Patch(ctx *fiber.Ctx) error {
 	}
 
 	data := tenant_case.PatchValues{}
-	if err := parser.ParseBody(ctx, &data); err != nil {
+	err := parser.ParseBody(ctx, &data)
+	if err != nil {
 		return ctx.JSON(err)
 	}
 
@@ -25,8 +27,8 @@ func (c *TenantController) Patch(ctx *fiber.Ctx) error {
 	}
 
 	if updated {
-		return ctx.SendStatus(200)
+		return ctx.SendStatus(http.StatusOK)
 	}
 
-	return ctx.SendStatus(404)
+	return ctx.SendStatus(http.StatusNotFound)
 }
