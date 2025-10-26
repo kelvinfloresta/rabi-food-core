@@ -13,8 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Fetch Repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Run Golint
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod' # Use the Go version specified in go.mod
+          cache: true
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59.1
+          args: --timeout=5m --out-format=checkstyle:golangci-lint.xml
+
+      - name: Run golangci-lint with Reviewdog
         uses: reviewdog/action-golangci-lint@v2
+        with:
+          workdir: app
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          golangci_lint_flags: --timeout=5m
+          level: warning
+          reporter: github-pr-review # Make a comment on the PR
+          fail_on_error: true
