@@ -1,0 +1,4 @@
+{
+    // Useful when clicking "run test | debug test" above a test function
+    "go.testEnvFile": "${workspaceFolder}/.env.test"
+}
