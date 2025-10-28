@@ -38,10 +38,9 @@ func (t *TestSuite) Test_ProductIntegration_Create() {
 	t.Run("should be able to create", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
-		categoryID := ""
+		categoryID := fixtures.Category.Create(t.T(), nil, token)
 
 		Body := product_gateway.CreateInput{
-			TenantID:    tenant.ID,
 			Name:        "Name",
 			Photo:       "http://example.com/photo.png",
 			Description: "Description",
