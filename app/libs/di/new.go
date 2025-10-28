@@ -4,13 +4,16 @@ import (
 	"errors"
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
+	"rabi-food-core/libs/database/gateways/product_gateway"
 	"rabi-food-core/libs/database/gateways/tenant_gateway"
 	"rabi-food-core/libs/database/gateways/user_gateway"
 	"rabi-food-core/libs/database/gorm_adapter"
 	"rabi-food-core/libs/http"
+	"rabi-food-core/libs/http/controllers/product_controller"
 	"rabi-food-core/libs/http/controllers/tenant_controller"
 	"rabi-food-core/libs/http/controllers/user_controller"
 	"rabi-food-core/libs/http/fiber_adapter"
+	"rabi-food-core/usecases/product_case"
 	"rabi-food-core/usecases/tenant_case"
 	"rabi-food-core/usecases/user_case"
 
@@ -44,12 +47,18 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 	do.Provide(injector, func(i *do.Injector) (http.HTTPServer, error) {
 		tenantController := do.MustInvoke[*tenant_controller.TenantController](i)
 		userController := do.MustInvoke[*user_controller.UserController](i)
+		productController := do.MustInvoke[*product_controller.ProductController](i)
 
 		if config.AppPort == "" {
 			return nil, ErrHTTPPortNotConfigured
 		}
 
-		return fiber_adapter.New(config.AppPort, tenantController, userController), nil
+		return fiber_adapter.New(
+			config.AppPort,
+			tenantController,
+			userController,
+			productController,
+		), nil
 	})
 
 	// User dependencies
@@ -89,6 +98,25 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 		c := do.MustInvoke[*tenant_case.TenantCase](i)
 
 		return tenant_controller.New(c), nil
+	})
+
+	// Product dependencies
+	do.Provide(injector, func(i *do.Injector) (*product_case.ProductCase, error) {
+		gw := do.MustInvoke[product_gateway.ProductGateway](i)
+
+		return product_case.New(gw), nil
+	})
+
+	do.Provide(injector, func(i *do.Injector) (product_gateway.ProductGateway, error) {
+		db := do.MustInvoke[*gorm_adapter.GormAdapter](i)
+
+		return &product_gateway.GormProductGatewayAdapter{DB: db}, nil
+	})
+
+	do.Provide(injector, func(i *do.Injector) (*product_controller.ProductController, error) {
+		c := do.MustInvoke[*product_case.ProductCase](i)
+
+		return product_controller.New(c), nil
 	})
 
 	return injector
