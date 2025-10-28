@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gavv/httpexpect/v2"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -319,6 +320,68 @@ func (t *TestSuite) Test_UserIntegration_Patch() {
 		t.Len(response.Errors, 1)
 		t.Equal("Photo", response.Errors[0].Field)
 		t.Equal("url", response.Errors[0].Tag)
+	})
+
+	t.Run("should return forbidden if trying to update another user without backoffice role", func() {
+		tenant1 := fixtures.Tenant.Create(t.T(), nil)
+		tenant2 := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant1.UserID)
+
+		Body := user_case.PatchValues{
+			Name: "NewName",
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.User.URI+tenant2.UserID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusForbidden)
+	})
+
+	t.Run("should be able to update another user with backoffice role", func() {
+		tenant1 := fixtures.Tenant.Create(t.T(), nil)
+		tenant2 := fixtures.Tenant.Create(t.T(), nil)
+		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant1.UserID)
+
+		Body := user_case.PatchValues{
+			Name: "NewName",
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.User.URI+tenant2.UserID).
+			WithHeader("Authorization", "Bearer "+backofficeToken).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusOK).
+			Body().NotEmpty()
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.User.URI+tenant2.UserID).
+			WithHeader("Authorization", "Bearer "+backofficeToken).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().
+			ContainsSubset(map[string]any{
+				"name": "NewName",
+			})
+	})
+
+	t.Run("should return not found if user does not exist", func() {
+		NON_EXISTENT_ID := uuid.NewString()
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
+
+		Body := user_case.PatchValues{
+			Name: "NewName",
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.User.URI+NON_EXISTENT_ID).
+			WithHeader("Authorization", "Bearer "+backofficeToken).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound)
 	})
 }
 
