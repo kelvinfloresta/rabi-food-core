@@ -27,6 +27,8 @@ func New(c *config.DatabaseConfig) database.Database {
 func (g *GormAdapter) Migrate() error {
 	return g.Conn.AutoMigrate(
 		&models.User{},
+		&models.Tenant{},
+		&models.Product{},
 	)
 }
 
