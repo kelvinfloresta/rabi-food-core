@@ -4,15 +4,18 @@ import (
 	"errors"
 	"rabi-food-core/config"
 	"rabi-food-core/libs/database"
+	"rabi-food-core/libs/database/gateways/category_gateway"
 	"rabi-food-core/libs/database/gateways/product_gateway"
 	"rabi-food-core/libs/database/gateways/tenant_gateway"
 	"rabi-food-core/libs/database/gateways/user_gateway"
 	"rabi-food-core/libs/database/gorm_adapter"
 	"rabi-food-core/libs/http"
+	"rabi-food-core/libs/http/controllers/category_controller"
 	"rabi-food-core/libs/http/controllers/product_controller"
 	"rabi-food-core/libs/http/controllers/tenant_controller"
 	"rabi-food-core/libs/http/controllers/user_controller"
 	"rabi-food-core/libs/http/fiber_adapter"
+	"rabi-food-core/usecases/category_case"
 	"rabi-food-core/usecases/product_case"
 	"rabi-food-core/usecases/tenant_case"
 	"rabi-food-core/usecases/user_case"
@@ -48,6 +51,7 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 		tenantController := do.MustInvoke[*tenant_controller.TenantController](i)
 		userController := do.MustInvoke[*user_controller.UserController](i)
 		productController := do.MustInvoke[*product_controller.ProductController](i)
+		categoryController := do.MustInvoke[*category_controller.CategoryController](i)
 
 		if config.AppPort == "" {
 			return nil, ErrHTTPPortNotConfigured
@@ -58,6 +62,7 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 			tenantController,
 			userController,
 			productController,
+			categoryController,
 		), nil
 	})
 
@@ -117,6 +122,25 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 		c := do.MustInvoke[*product_case.ProductCase](i)
 
 		return product_controller.New(c), nil
+	})
+
+	// Category dependencies
+	do.Provide(injector, func(i *do.Injector) (*category_controller.CategoryController, error) {
+		c := do.MustInvoke[*category_case.CategoryCase](i)
+
+		return category_controller.New(c), nil
+	})
+
+	do.Provide(injector, func(i *do.Injector) (*category_case.CategoryCase, error) {
+		gw := do.MustInvoke[category_gateway.CategoryGateway](i)
+
+		return category_case.New(gw), nil
+	})
+
+	do.Provide(injector, func(i *do.Injector) (category_gateway.CategoryGateway, error) {
+		db := do.MustInvoke[*gorm_adapter.GormAdapter](i)
+
+		return &category_gateway.GormCategoryGatewayAdapter{DB: db}, nil
 	})
 
 	return injector
