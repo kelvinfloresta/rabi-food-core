@@ -29,6 +29,7 @@ func (g *GormAdapter) Migrate() error {
 		&models.User{},
 		&models.Tenant{},
 		&models.Product{},
+		&models.Category{},
 	)
 }
 
