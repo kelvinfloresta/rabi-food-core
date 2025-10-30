@@ -16,6 +16,10 @@ func (g *GormCategoryGatewayAdapter) Paginate(
 		query = query.Where("name = ?", filter.Name)
 	}
 
+	if filter.TenantID != "" {
+		query = query.Where("tenant_id = ?", filter.TenantID)
+	}
+
 	count := int64(0)
 	data := []PaginateData{}
 	err := gorm_adapter.Paginate(query, &count, &data, paginate)

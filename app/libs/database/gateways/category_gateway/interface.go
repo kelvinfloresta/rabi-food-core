@@ -35,7 +35,8 @@ type PatchValues struct {
 }
 
 type PaginateFilter struct {
-	Name *string `json:"name"`
+	TenantID string  `json:"tenantId"`
+	Name     *string `json:"name"`
 }
 
 type PaginateData struct {

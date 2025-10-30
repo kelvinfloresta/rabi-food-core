@@ -226,4 +226,33 @@ func (t *TestSuite) Test_CategoryIntegration_Paginate() {
 			t.Equal("Description", response.Data[i].Description)
 		}
 	})
+
+	t.Run("should not be able to paginate categories from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+
+		for range 5 {
+			fixtures.Category.Create(t.T(), nil, anotherToken)
+		}
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		response := new(category_gateway.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Category.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Empty(response.Data)
+		t.Equal(0, response.MaxPages)
+
+	})
+}
 }
