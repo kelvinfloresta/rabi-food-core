@@ -255,4 +255,53 @@ func (t *TestSuite) Test_CategoryIntegration_Paginate() {
 
 	})
 }
+
+func (t *TestSuite) Test_CategoryIntegration_Patch() {
+	t.Run("should be able to patch", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		categoryID := fixtures.Category.Create(t.T(), nil, token)
+
+		Body := category_gateway.PatchValues{
+			Name:        "Updated Name",
+			Description: "Updated Description",
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.Category.URI+categoryID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusOK).
+			Body().NotEmpty()
+
+		found, status := fixtures.Category.GetByID(t.T(), categoryID, token)
+
+		t.Equal(http.StatusOK, status)
+		t.Equal(categoryID, found.ID)
+		t.Equal("Updated Name", found.Name)
+		t.Equal("Updated Description", found.Description)
+	})
+
+	t.Run("should not be able to patch a category from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+		anotherCategoryID := fixtures.Category.Create(t.T(), nil, anotherToken)
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		Body := category_gateway.PatchValues{
+			Name:        "Updated Name",
+			Description: "Updated Description",
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.Category.URI+anotherCategoryID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
 }

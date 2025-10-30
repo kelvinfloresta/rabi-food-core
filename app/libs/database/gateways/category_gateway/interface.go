@@ -26,7 +26,8 @@ type GetByIDOutput struct {
 }
 
 type PatchFilter struct {
-	ID string
+	ID       string `json:"id"`
+	TenantID string `json:"tenantId"`
 }
 
 type PatchValues struct {
