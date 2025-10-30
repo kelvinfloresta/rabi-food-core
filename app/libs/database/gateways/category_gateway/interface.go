@@ -6,7 +6,7 @@ import (
 
 type CategoryGateway interface {
 	Create(input CreateInput) (string, error)
-	GetByID(id string) (*GetByIDOutput, error)
+	GetByID(id string, tenantID string) (*GetByIDOutput, error)
 	Patch(filter PatchFilter, values PatchValues) (bool, error)
 	Paginate(filter PaginateFilter, paginate database.PaginateInput) (PaginateOutput, error)
 	Delete(id string) (bool, error)
@@ -22,6 +22,7 @@ type GetByIDOutput struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	TenantID    string `json:"tenantId"`
 }
 
 type PatchFilter struct {

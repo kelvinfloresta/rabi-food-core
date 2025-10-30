@@ -128,4 +128,69 @@ func (t *TestSuite) Test_CategoryIntegration_Create() {
 			Status(http.StatusCreated).
 			Body().NotEmpty()
 	})
+
+	t.Run("should ignore provided tenantID and use token tenant when user is not backoffice", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+
+		Body := category_gateway.CreateInput{
+			TenantID:    anotherTenant.ID,
+			Name:        "Name",
+			Description: "Description",
+		}
+
+		categoryID := fixtures.Category.Create(t.T(), &Body, token)
+
+		categoryFound, httpStatus := fixtures.Category.GetByID(t.T(), categoryID, token)
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal(tenant.ID, categoryFound.TenantID)
+	})
+}
+
+func (t *TestSuite) Test_CategoryIntegration_GetByID() {
+	t.Run("should be able to get by id", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		categoryID := fixtures.Category.Create(t.T(), nil, token)
+
+		found, status := fixtures.Category.GetByID(t.T(), categoryID, token)
+
+		t.Equal(http.StatusOK, status)
+		t.Equal(categoryID, found.ID)
+		t.Equal("Name", found.Name)
+		t.Equal("Description", found.Description)
+	})
+
+	t.Run("should return NotFound when get by id not found", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		_ = fixtures.Category.Create(t.T(), nil, token)
+
+		NON_EXISTING_ID := uuid.New().String()
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Category.URI+NON_EXISTING_ID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
+
+	t.Run("should not be able to get a category from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+		anotherCategoryID := fixtures.Category.Create(t.T(), nil, anotherToken)
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Category.URI+anotherCategoryID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
 }
