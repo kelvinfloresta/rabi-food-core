@@ -3,6 +3,7 @@ package category_case_test
 import (
 	"net/http"
 	"rabi-food-core/fixtures"
+	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/database/gateways/category_gateway"
 	"rabi-food-core/libs/http/fiber_adapter/middlewares"
 	"testing"
@@ -192,5 +193,37 @@ func (t *TestSuite) Test_CategoryIntegration_GetByID() {
 			Expect().
 			Status(http.StatusNotFound).
 			Body().NotEmpty()
+	})
+}
+
+func (t *TestSuite) Test_CategoryIntegration_Paginate() {
+	t.Run("should be able to paginate", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		for range 15 {
+			fixtures.Category.Create(t.T(), nil, token)
+		}
+
+		response := new(category_gateway.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Category.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Len(response.Data, 10)
+		t.Equal(2, response.MaxPages)
+
+		for i := range 10 {
+			t.NotEmpty(response.Data[i].ID)
+			t.Equal("Name", response.Data[i].Name)
+			t.Equal("Description", response.Data[i].Description)
+		}
 	})
 }

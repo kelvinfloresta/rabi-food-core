@@ -10,6 +10,9 @@ import (
 
 var tables = []string{
 	models.User{}.TableName(),
+	models.Tenant{}.TableName(),
+	models.Category{}.TableName(),
+	models.Product{}.TableName(),
 }
 
 func CleanDatabase(t *testing.T) {
