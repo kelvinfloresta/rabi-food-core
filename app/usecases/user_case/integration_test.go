@@ -3,7 +3,8 @@ package user_case_test
 import (
 	"net/http"
 	"rabi-food-core/fixtures"
-	"rabi-food-core/libs/database/gateways/user_gateway"
+	"rabi-food-core/libs/database"
+	g "rabi-food-core/libs/database/gateways/user_gateway"
 	"rabi-food-core/libs/http/fiber_adapter/middlewares"
 	"rabi-food-core/usecases/tenant_case"
 	"rabi-food-core/usecases/user_case"
@@ -164,6 +165,28 @@ func (t *TestSuite) Test_UserIntegration_Create() {
 		t.Equal("Photo", response.Errors[0].Field)
 		t.Equal("url", response.Errors[0].Tag)
 	})
+
+	t.Run("should ignore provided tenantID and use token tenant when user is not backoffice", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+
+		Body := user_case.CreateInput{
+			Name:     "Name",
+			Email:    "email@email.com",
+			TenantID: anotherTenant.ID, // Attempt to set different tenant ID
+		}
+
+		userID := fixtures.User.Create(t.T(), &Body, token)
+
+		userFound, httpStatus := fixtures.User.GetByID(t.T(), userID, token)
+
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal(userID, userFound.ID, "UserID should match the created user ID")
+		t.Equal(tenant.ID, userFound.TenantID, "TenantID should match the token's tenant ID")
+	})
+
 }
 
 func (t *TestSuite) Test_UserIntegration_GetByID() {
@@ -192,6 +215,19 @@ func (t *TestSuite) Test_UserIntegration_GetByID() {
 				"phone":    newUser.Phone,
 			})
 	})
+
+	t.Run("should not be able to get a user from another tenant", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.User.URI+tenant.UserID).
+			WithHeader("Authorization", "Bearer "+anotherToken).
+			Expect().
+			Status(http.StatusNotFound)
+	})
 }
 
 func (t *TestSuite) Test_UserIntegration_Paginate() {
@@ -214,7 +250,7 @@ func (t *TestSuite) Test_UserIntegration_Paginate() {
 
 		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
 
-		response := new(user_gateway.PaginateOutput)
+		response := new(g.PaginateOutput)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodGet, fixtures.User.URI).
 			WithHeader("Authorization", "Bearer "+backofficeToken).
@@ -250,13 +286,41 @@ func (t *TestSuite) Test_UserIntegration_Paginate() {
 				"maxPages": 0,
 			})
 	})
+
+	t.Run("should not be able to paginate users from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+
+		for range 5 {
+			fixtures.User.Create(t.T(), nil, anotherToken)
+		}
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		response := new(g.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.User.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Empty(response.Data)
+		t.Equal(0, response.MaxPages)
+	})
 }
+
 func (t *TestSuite) Test_UserIntegration_Patch() {
 	t.Run("should be able to update", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 
-		Body := user_case.PatchValues{
+		Body := g.PatchValues{
 			ZIP:        "NewZIP",
 			Phone:      "NewPhone",
 			Email:      "new-email@email.com",
@@ -304,7 +368,7 @@ func (t *TestSuite) Test_UserIntegration_Patch() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 
-		Body := user_case.PatchValues{
+		Body := g.PatchValues{
 			Photo: "invalid-url",
 		}
 
@@ -322,21 +386,8 @@ func (t *TestSuite) Test_UserIntegration_Patch() {
 		t.Equal("url", response.Errors[0].Tag)
 	})
 
-	t.Run("should return forbidden if trying to update another user without backoffice role", func() {
-		tenant1 := fixtures.Tenant.Create(t.T(), nil)
-		tenant2 := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.UserToken(t.T(), tenant1.UserID)
-
-		Body := user_case.PatchValues{
-			Name: "NewName",
-		}
-
-		httpexpect.Default(t.T(), fixtures.AppURL).
-			Request(http.MethodPatch, fixtures.User.URI+tenant2.UserID).
-			WithHeader("Authorization", "Bearer "+token).
-			WithJSON(Body).
-			Expect().
-			Status(http.StatusForbidden)
+	t.Run("should be able to update another user for the same tenant if role is TenantManager", func() {
+		t.T().Skip("Skipping until TenantManager role is implemented")
 	})
 
 	t.Run("should be able to update another user with backoffice role", func() {
@@ -344,7 +395,7 @@ func (t *TestSuite) Test_UserIntegration_Patch() {
 		tenant2 := fixtures.Tenant.Create(t.T(), nil)
 		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant1.UserID)
 
-		Body := user_case.PatchValues{
+		Body := g.PatchValues{
 			Name: "NewName",
 		}
 
@@ -372,7 +423,7 @@ func (t *TestSuite) Test_UserIntegration_Patch() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
 
-		Body := user_case.PatchValues{
+		Body := g.PatchValues{
 			Name: "NewName",
 		}
 
@@ -382,6 +433,25 @@ func (t *TestSuite) Test_UserIntegration_Patch() {
 			WithJSON(Body).
 			Expect().
 			Status(http.StatusNotFound)
+	})
+
+	t.Run("should not be able to patch a user from another tenant", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+
+		Body := g.PatchValues{
+			Name: "New Name",
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.User.URI+anotherTenant.UserID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
 	})
 }
 
@@ -402,5 +472,19 @@ func (t *TestSuite) Test_UserIntegration_Delete() {
 			WithHeader("Authorization", "Bearer "+token).
 			Expect().
 			Status(http.StatusNotFound)
+	})
+
+	t.Run("should not be able to delete a user from another tenant", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodDelete, fixtures.User.URI+anotherTenant.UserID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
 	})
 }
