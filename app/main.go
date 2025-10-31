@@ -17,7 +17,13 @@ func main() {
 
 	time.Local = time.UTC
 
-	injector := di.NewProduction()
+	injector := new(do.Injector)
+	if config.Env == "production" {
+		injector = di.NewProduction()
+	} else {
+		injector = di.NewTest()
+	}
+
 	db := do.MustInvoke[database.Database](injector)
 
 	err := db.Start()

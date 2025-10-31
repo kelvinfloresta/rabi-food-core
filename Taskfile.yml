@@ -10,6 +10,7 @@ tasks:
     desc: "Start the development environment"
     dir: app
     dotenv: ["../.env.test"]
+    deps: [infra-test]
     cmds:
       - go run main.go
     silent: false
