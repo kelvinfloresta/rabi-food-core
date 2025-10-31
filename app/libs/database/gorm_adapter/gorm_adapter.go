@@ -37,7 +37,6 @@ func (g *GormAdapter) Migrate() error {
 
 // Connect establishes a connection to the database.
 func (g *GormAdapter) Connect() error {
-
 	time.Local = time.UTC
 
 	logger.L().Info().Msg("Connecting to database with DSN: " + g.config.String())

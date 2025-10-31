@@ -186,7 +186,6 @@ func (t *TestSuite) Test_UserIntegration_Create() {
 		t.Equal(userID, userFound.ID, "UserID should match the created user ID")
 		t.Equal(tenant.ID, userFound.TenantID, "TenantID should match the token's tenant ID")
 	})
-
 }
 
 func (t *TestSuite) Test_UserIntegration_GetByID() {
@@ -231,7 +230,6 @@ func (t *TestSuite) Test_UserIntegration_GetByID() {
 }
 
 func (t *TestSuite) Test_UserIntegration_Paginate() {
-
 	t.Run("should be able to paginate", func() {
 		defaultUser := user_case.CreateInput{
 			Name:         "Name",

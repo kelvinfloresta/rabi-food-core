@@ -26,7 +26,7 @@ func (productFixture) Create(t *testing.T, input *product_gateway.CreateInput, t
 			Description: "Description",
 			CategoryID:  categoryID,
 			Unit:        "Unit",
-			Price:       100,
+			Price:       100, //nolint:mnd
 			IsActive:    true,
 		}
 	}

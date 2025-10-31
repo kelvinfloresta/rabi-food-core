@@ -36,7 +36,6 @@ func TestMySuite(t *testing.T) {
 }
 
 func (t *TestSuite) Test_ProductIntegration_Create() {
-
 	t.Run("should be able to create", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
@@ -184,7 +183,6 @@ func (t *TestSuite) Test_ProductIntegration_Paginate() {
 
 		t.Empty(response.Data)
 		t.Equal(0, response.MaxPages)
-
 	})
 }
 

@@ -15,6 +15,13 @@ tasks:
       - go run main.go
     silent: false
 
+  lint:
+    desc: "Run linters using golangci-lint"
+    dir: app
+    cmds:
+      - golangci-lint run --timeout 5m
+    silent: false
+
   # =============================
   # 🚀 Production build and run
   # =============================

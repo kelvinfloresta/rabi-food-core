@@ -252,7 +252,6 @@ func (t *TestSuite) Test_CategoryIntegration_Paginate() {
 
 		t.Empty(response.Data)
 		t.Equal(0, response.MaxPages)
-
 	})
 }
 

@@ -14,7 +14,7 @@ type CategoryGateway interface {
 
 type CreateInput struct {
 	TenantID    string `json:"tenantId"`
-	Name        string `validate:"required" json:"name"`
+	Name        string `json:"name"        validate:"required"`
 	Description string `json:"description"`
 }
 

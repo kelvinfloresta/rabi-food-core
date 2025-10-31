@@ -17,7 +17,7 @@ type CreateInput struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Photo       string `json:"photo"`
-	CategoryID  string `json:"categoryId" validate:"required"`
+	CategoryID  string `json:"categoryId"  validate:"required"`
 	Unit        string `json:"unit"`
 	Price       int    `json:"price"`
 	IsActive    bool   `json:"isActive"`

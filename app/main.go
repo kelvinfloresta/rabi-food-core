@@ -17,7 +17,7 @@ func main() {
 
 	time.Local = time.UTC
 
-	injector := new(do.Injector)
+	var injector *do.Injector
 	if config.Env == "production" {
 		injector = di.NewProduction()
 	} else {
