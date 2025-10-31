@@ -19,11 +19,12 @@ func (productFixture) Create(t *testing.T, input *product_gateway.CreateInput, t
 	t.Helper()
 	Body := input
 	if Body == nil {
+		categoryID := Category.Create(t, nil, token)
 		Body = &product_gateway.CreateInput{
 			Name:        "Name",
 			Photo:       "http://example.com/photo.png",
 			Description: "Description",
-			CategoryID:  "CategoryID",
+			CategoryID:  categoryID,
 			Unit:        "Unit",
 			Price:       100,
 			IsActive:    true,

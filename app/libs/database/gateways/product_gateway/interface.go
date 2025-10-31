@@ -6,7 +6,7 @@ import (
 
 type ProductGateway interface {
 	Create(input CreateInput) (string, error)
-	GetByID(id string) (*GetByIDOutput, error)
+	GetByID(filter GetByIDFilter) (*GetByIDOutput, error)
 	Patch(filter PatchFilter, values PatchValues) (bool, error)
 	Paginate(filter PaginateFilter, paginate database.PaginateInput) (PaginateOutput, error)
 	Delete(id string) (bool, error)
@@ -17,14 +17,20 @@ type CreateInput struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Photo       string `json:"photo"`
-	CategoryID  string `json:"categoryId"`
+	CategoryID  string `json:"categoryId" validate:"required"`
 	Unit        string `json:"unit"`
 	Price       int    `json:"price"`
 	IsActive    bool   `json:"isActive"`
 }
 
+type GetByIDFilter struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenantId"`
+}
+
 type GetByIDOutput struct {
 	ID           string `json:"id"`
+	TenantID     string `json:"tenantId"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	Photo        string `json:"photo"`
@@ -50,6 +56,7 @@ type PatchValues struct {
 }
 
 type PaginateFilter struct {
+	TenantID   *string `json:"tenantId"`
 	Name       *string `json:"name"`
 	CategoryID *string `json:"categoryId"`
 	IsActive   *bool   `json:"isActive"`

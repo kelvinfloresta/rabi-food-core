@@ -59,4 +59,23 @@ func (t *TestSuite) Test_ProductIntegration_Create() {
 			Body().NotEmpty()
 	})
 
+	t.Run("should ignore provided tenantID and use token tenant when user is not backoffice", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		categoryID := fixtures.Category.Create(t.T(), nil, token)
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		body := product_gateway.CreateInput{
+			TenantID:    anotherTenant.ID,
+			Name:        "Name",
+			Description: "Description",
+			CategoryID:  categoryID,
+		}
+
+		productID := fixtures.Product.Create(t.T(), &body, token)
+
+		productFound, httpStatus := fixtures.Product.GetByID(t.T(), productID, token)
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal(tenant.ID, productFound.TenantID)
+	})
 }

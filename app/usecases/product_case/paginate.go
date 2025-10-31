@@ -2,6 +2,7 @@ package product_case
 
 import (
 	"context"
+	"rabi-food-core/app_context"
 	"rabi-food-core/libs/database"
 	g "rabi-food-core/libs/database/gateways/product_gateway"
 )
@@ -11,5 +12,11 @@ func (c *ProductCase) Paginate(
 	input g.PaginateFilter,
 	paginate database.PaginateInput,
 ) (g.PaginateOutput, error) {
+	session := app_context.GetSession(ctx)
+
+	if session.Role.IsUser() {
+		input.TenantID = &session.TenantID
+	}
+
 	return c.gateway.Paginate(input, paginate)
 }

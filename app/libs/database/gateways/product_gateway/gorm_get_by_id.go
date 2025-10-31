@@ -4,12 +4,17 @@ import (
 	"rabi-food-core/libs/database/gorm_adapter/models"
 )
 
-func (g *GormProductGatewayAdapter) GetByID(id string) (*GetByIDOutput, error) {
+func (g *GormProductGatewayAdapter) GetByID(filter GetByIDFilter) (*GetByIDOutput, error) {
 	output := &models.Product{}
-	result := g.DB.Conn.Limit(1).
-		Preload("Category").
-		Find(output, "id = ?", id)
+	query := g.DB.Conn.Limit(1).
+		Where("id = ?", filter.ID).
+		Preload("Category")
 
+	if filter.TenantID != "" {
+		query = query.Where("tenant_id = ?", filter.TenantID)
+	}
+
+	result := query.Find(output)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -19,7 +24,8 @@ func (g *GormProductGatewayAdapter) GetByID(id string) (*GetByIDOutput, error) {
 	}
 
 	adapted := GetByIDOutput{
-		ID:           id,
+		ID:           output.ID,
+		TenantID:     output.TenantID,
 		Name:         output.Name,
 		Description:  output.Description,
 		Photo:        output.Photo,

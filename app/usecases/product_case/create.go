@@ -9,7 +9,9 @@ import (
 
 func (c *ProductCase) Create(ctx context.Context, input g.CreateInput) (string, error) {
 	session := app_context.GetSession(ctx)
-	input.TenantID = session.TenantID
+	if session.Role.IsUser() {
+		input.TenantID = session.TenantID
+	}
 
 	id, err := c.gateway.Create(input)
 
