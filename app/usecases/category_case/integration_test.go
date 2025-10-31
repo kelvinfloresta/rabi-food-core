@@ -305,3 +305,39 @@ func (t *TestSuite) Test_CategoryIntegration_Patch() {
 			Body().NotEmpty()
 	})
 }
+
+func (t *TestSuite) Test_CategoryIntegration_Delete() {
+	t.Run("should be able to delete", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		categoryID := fixtures.Category.Create(t.T(), nil, token)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodDelete, fixtures.Category.URI+categoryID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNoContent)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Category.URI+categoryID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound)
+	})
+
+	t.Run("should not be able to delete a category from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+		anotherCategoryID := fixtures.Category.Create(t.T(), nil, anotherToken)
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodDelete, fixtures.Category.URI+anotherCategoryID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
+}

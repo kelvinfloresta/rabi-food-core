@@ -4,9 +4,9 @@ import (
 	"rabi-food-core/libs/database/gorm_adapter/models"
 )
 
-func (g *GormCategoryGatewayAdapter) Delete(id string) (bool, error) {
+func (g *GormCategoryGatewayAdapter) Delete(filter DeleteFilter) (bool, error) {
 	result := g.DB.Conn.Where(
-		"id = ?", id,
+		"id = ? AND tenant_id = ?", filter.ID, filter.TenantID,
 	).Delete(&models.Category{})
 
 	return result.RowsAffected > 0, result.Error
