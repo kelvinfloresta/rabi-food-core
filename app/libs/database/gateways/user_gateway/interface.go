@@ -71,9 +71,10 @@ type PatchValues struct {
 }
 
 type PaginateFilter struct {
-	State *string
-	City  *string
-	Name  *string
+	TenantID *string
+	State    *string
+	City     *string
+	Name     *string
 }
 
 type PaginateData struct {

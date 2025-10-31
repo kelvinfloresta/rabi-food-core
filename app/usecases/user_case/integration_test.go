@@ -26,7 +26,7 @@ func (t *TestSuite) SetupSuite() {
 	t.app.Start(t.T())
 }
 
-func (t *TestSuite) SetupTest() {
+func (t *TestSuite) SetupSubTest() {
 	fixtures.CleanDatabase(t.T())
 }
 
@@ -231,72 +231,35 @@ func (t *TestSuite) Test_UserIntegration_GetByID() {
 }
 
 func (t *TestSuite) Test_UserIntegration_Paginate() {
-	t.Run("should be able to paginate if is a backoffice user", func() {
-		EXPECTED_NAME := "Name"
+
+	t.Run("should be able to paginate", func() {
+		defaultUser := user_case.CreateInput{
+			Name:         "Name",
+			Photo:        "http://example.com/photo.png",
+			TaxID:        "TaxID",
+			City:         "City",
+			State:        "State",
+			Phone:        "Phone",
+			ZIP:          "ZIP",
+			SocialID:     "SocialID",
+			Email:        "email@email.com",
+			Neighborhood: "Neighborhood",
+			Street:       "Street",
+			Complement:   "Complement",
+		}
 		tenant := fixtures.Tenant.Create(t.T(), &tenant_case.CreateInput{
 			Name:     "Tenant Name",
-			UserName: EXPECTED_NAME,
-			Email:    "email@email.com",
-			Phone:    "Phone",
+			UserName: defaultUser.Name,
+			Phone:    defaultUser.Phone,
+			Email:    defaultUser.Email,
 		})
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 
+		userIDs := make(map[string]bool)
 		for range 5 {
-			fixtures.User.Create(t.T(), &user_case.CreateInput{
-				Name:  EXPECTED_NAME,
-				Email: "email@email.com",
-			}, token)
+			userID := fixtures.User.Create(t.T(), &defaultUser, token)
+			userIDs[userID] = true
 		}
-
-		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
-
-		response := new(g.PaginateOutput)
-		httpexpect.Default(t.T(), fixtures.AppURL).
-			Request(http.MethodGet, fixtures.User.URI).
-			WithHeader("Authorization", "Bearer "+backofficeToken).
-			Expect().
-			Status(http.StatusOK).
-			JSON().Decode(response)
-
-		t.Len(response.Data, 6)
-		t.Equal(1, response.MaxPages)
-
-		for _, user := range response.Data {
-			t.NotEmpty(user.ID)
-			t.Equal(EXPECTED_NAME, user.Name)
-		}
-	})
-
-	t.Run("should not be able to paginate if is a common user", func() {
-		tenant := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
-
-		for range 5 {
-			fixtures.User.Create(t.T(), nil, token)
-		}
-
-		httpexpect.Default(t.T(), fixtures.AppURL).
-			Request(http.MethodGet, fixtures.User.URI).
-			WithHeader("Authorization", "Bearer "+token).
-			Expect().
-			Status(http.StatusOK).
-			JSON().Object().
-			ContainsSubset(map[string]any{
-				"data":     []any{},
-				"maxPages": 0,
-			})
-	})
-
-	t.Run("should not be able to paginate users from another tenant", func() {
-		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
-		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
-
-		for range 5 {
-			fixtures.User.Create(t.T(), nil, anotherToken)
-		}
-
-		tenant := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 
 		response := new(g.PaginateOutput)
 		httpexpect.Default(t.T(), fixtures.AppURL).
@@ -310,8 +273,76 @@ func (t *TestSuite) Test_UserIntegration_Paginate() {
 			Status(http.StatusOK).
 			JSON().Decode(&response)
 
-		t.Empty(response.Data)
-		t.Equal(0, response.MaxPages)
+		t.Len(response.Data, 6) // 5 created + 1 tenant user
+		t.Equal(1, response.MaxPages)
+
+		for _, user := range response.Data {
+			if user.ID == tenant.UserID {
+				continue // Skip tenant user
+			}
+			t.True(userIDs[user.ID])
+			t.Equal(defaultUser.Name, user.Name)
+			t.Equal(defaultUser.Photo, user.Photo)
+			t.Equal(defaultUser.State, user.State)
+			t.Equal(defaultUser.City, user.City)
+		}
+	})
+
+	t.Run("should be able to paginate users from another tenant if is a backoffice user", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil) // Create 1 users
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		for range 5 {
+			fixtures.User.Create(t.T(), nil, token) // Create 5 users
+		}
+
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil) // Create 1 user
+		backoffToken := fixtures.Auth.BackofficeToken(t.T(), anotherTenant.UserID)
+		EXPECTED_AMOUNT_OF_USERS := 7
+
+		response := new(g.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.User.URI).
+			WithHeader("Authorization", "Bearer "+backoffToken).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Len(response.Data, EXPECTED_AMOUNT_OF_USERS)
+		t.Equal(1, response.MaxPages)
+	})
+
+	t.Run("should not be able to paginate users from another tenant", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		for range 5 {
+			fixtures.User.Create(t.T(), nil, token)
+		}
+
+		// Needed to created 1 user in another tenant
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		EXPECTED_AMOUNT_OF_USERS := 1
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+
+		response := new(g.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.User.URI).
+			WithHeader("Authorization", "Bearer "+anotherToken).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Len(response.Data, EXPECTED_AMOUNT_OF_USERS)
+		t.Equal(1, response.MaxPages)
 	})
 }
 
