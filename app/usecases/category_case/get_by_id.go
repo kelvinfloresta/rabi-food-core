@@ -7,6 +7,14 @@ import (
 )
 
 func (c *CategoryCase) GetByID(ctx context.Context, id string) (*g.GetByIDOutput, error) {
+	filter := g.GetByIDFilter{
+		ID: id,
+	}
+
 	session := app_context.GetSession(ctx)
-	return c.gateway.GetByID(id, session.TenantID)
+	if session.Role.IsUser() {
+		filter.TenantID = session.TenantID
+	}
+
+	return c.gateway.GetByID(filter)
 }
