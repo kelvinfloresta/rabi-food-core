@@ -41,7 +41,7 @@ type PatchValues struct {
 }
 
 type PaginateFilter struct {
-	TenantID string  `json:"tenantId"`
+	TenantID *string `json:"tenantId"`
 	Name     *string `json:"name"`
 }
 

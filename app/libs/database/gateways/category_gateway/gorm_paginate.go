@@ -16,7 +16,7 @@ func (g *GormCategoryGatewayAdapter) Paginate(
 		query = query.Where("name = ?", filter.Name)
 	}
 
-	if filter.TenantID != "" {
+	if filter.TenantID != nil {
 		query = query.Where("tenant_id = ?", filter.TenantID)
 	}
 
