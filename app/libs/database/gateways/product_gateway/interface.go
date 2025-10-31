@@ -9,7 +9,7 @@ type ProductGateway interface {
 	GetByID(filter GetByIDFilter) (*GetByIDOutput, error)
 	Patch(filter PatchFilter, values PatchValues) (bool, error)
 	Paginate(filter PaginateFilter, paginate database.PaginateInput) (PaginateOutput, error)
-	Delete(id string) (bool, error)
+	Delete(filter DeleteFilter) (bool, error)
 }
 
 type CreateInput struct {
@@ -42,7 +42,8 @@ type GetByIDOutput struct {
 }
 
 type PatchFilter struct {
-	ID string
+	ID       string `json:"id"`
+	TenantID string `json:"tenantId"`
 }
 
 type PatchValues struct {
@@ -76,4 +77,9 @@ type PaginateData struct {
 type PaginateOutput struct {
 	Data     []PaginateData `json:"data"`
 	MaxPages int            `json:"maxPages"`
+}
+
+type DeleteFilter struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenantId"`
 }
