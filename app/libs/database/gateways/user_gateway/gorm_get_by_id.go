@@ -4,10 +4,15 @@ import (
 	"rabi-food-core/libs/database/gorm_adapter/models"
 )
 
-func (g *GormUserGatewayAdapter) GetByID(id string) (*GetByIDOutput, error) {
+func (g *GormUserGatewayAdapter) GetByID(filter GetByIDFilter) (*GetByIDOutput, error) {
 	output := &models.User{}
-	result := g.DB.Conn.Limit(1).Find(output, "id = ?", id)
+	query := g.DB.Conn.Limit(1).Where("id = ?", filter.ID)
 
+	if filter.TenantID != "" {
+		query = query.Where("tenant_id = ?", filter.TenantID)
+	}
+
+	result := query.Find(output)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -17,6 +22,7 @@ func (g *GormUserGatewayAdapter) GetByID(id string) (*GetByIDOutput, error) {
 	}
 
 	adapted := GetByIDOutput{
+		ID:         output.ID,
 		State:      output.State,
 		ZIP:        output.ZIP,
 		Phone:      output.Phone,

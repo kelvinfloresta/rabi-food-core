@@ -3,6 +3,8 @@ package fiber_adapter
 import (
 	"rabi-food-core/config"
 	"rabi-food-core/libs/http"
+	"rabi-food-core/libs/http/controllers/category_controller"
+	"rabi-food-core/libs/http/controllers/product_controller"
 	"rabi-food-core/libs/http/controllers/tenant_controller"
 	"rabi-food-core/libs/http/controllers/user_controller"
 	"rabi-food-core/libs/http/fiber_adapter/middlewares"
@@ -25,6 +27,8 @@ func New(
 	port string,
 	tenantController *tenant_controller.TenantController,
 	userController *user_controller.UserController,
+	productController *product_controller.ProductController,
+	categoryController *category_controller.CategoryController,
 ) http.HTTPServer {
 	app := fiber.New(fiber.Config{
 		Immutable:    true,
@@ -48,6 +52,8 @@ func New(
 
 	routes.User(app, userController)
 	routes.Tenant(app, tenantController)
+	routes.Product(app, productController)
+	routes.Category(app, categoryController)
 
 	return &fiberAdapter{
 		app:  app,
