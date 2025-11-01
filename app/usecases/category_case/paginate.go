@@ -14,7 +14,7 @@ func (c *CategoryCase) Paginate(
 ) (g.PaginateOutput, error) {
 	session := app_context.GetSession(ctx)
 	if session.Role.IsUser() {
-		input.TenantID = session.TenantID
+		input.TenantID = &session.TenantID
 	}
 
 	return c.gateway.Paginate(input, paginate)
