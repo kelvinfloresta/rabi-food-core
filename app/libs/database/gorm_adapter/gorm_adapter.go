@@ -32,6 +32,7 @@ func (g *GormAdapter) Migrate() error {
 		&models.Tenant{},
 		&models.Product{},
 		&models.Category{},
+		&models.Order{},
 	)
 }
 
@@ -98,15 +99,20 @@ func (g *GormAdapter) CreateDatabase() error {
 func (g *GormAdapter) Start() error {
 	err := g.CreateDatabase()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create database: %w", err)
 	}
 
 	err = g.Connect()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	return g.Migrate()
+	err = g.Migrate()
+	if err != nil {
+		return fmt.Errorf("failed to migrate database: %w", err)
+	}
+
+	return nil
 }
 
 // Stop closes the database connection.

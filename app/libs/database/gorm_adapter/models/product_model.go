@@ -22,7 +22,7 @@ type Product struct {
 	// Measurement and pricing details
 	// Unit of measurement (e.g., "kg", "liter", "piece")
 	Unit  string `gorm:"not null"`
-	Price int    `gorm:"not null"`
+	Price uint   `gorm:"not null"`
 
 	IsActive bool `gorm:"default:true"`
 

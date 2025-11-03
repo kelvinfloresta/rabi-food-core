@@ -8,8 +8,20 @@ type ProductGateway interface {
 	Create(input CreateInput) (string, error)
 	GetByID(filter GetByIDFilter) (*GetByIDOutput, error)
 	Patch(filter PatchFilter, values PatchValues) (bool, error)
+	List(filter ListFilter) ([]ListOutput, error)
 	Paginate(filter PaginateFilter, paginate database.PaginateInput) (PaginateOutput, error)
 	Delete(filter DeleteFilter) (bool, error)
+}
+
+type ListFilter struct {
+	IDs      []string `json:"ids"`
+	TenantID string   `json:"tenantId"`
+}
+
+type ListOutput struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Price uint   `json:"price"`
 }
 
 type CreateInput struct {
@@ -19,7 +31,7 @@ type CreateInput struct {
 	Photo       string `json:"photo"`
 	CategoryID  string `json:"categoryId"  validate:"required"`
 	Unit        string `json:"unit"`
-	Price       int    `json:"price"`
+	Price       uint   `json:"price"`
 	IsActive    bool   `json:"isActive"`
 }
 
@@ -37,7 +49,7 @@ type GetByIDOutput struct {
 	CategoryID   string `json:"categoryId"`
 	CategoryName string `json:"categoryName"`
 	Unit         string `json:"unit"`
-	Price        int    `json:"price"`
+	Price        uint   `json:"price"`
 	IsActive     bool   `json:"isActive"`
 }
 
@@ -52,7 +64,7 @@ type PatchValues struct {
 	Photo       string `json:"photo"`
 	CategoryID  string `json:"categoryId"`
 	Unit        string `json:"unit"`
-	Price       int    `json:"price"`
+	Price       uint   `json:"price"`
 	IsActive    bool   `json:"isActive"`
 }
 
@@ -70,7 +82,7 @@ type PaginateData struct {
 	Photo       string `json:"photo"`
 	CategoryID  string `json:"categoryId"`
 	Unit        string `json:"unit"`
-	Price       int    `json:"price"`
+	Price       uint   `json:"price"`
 	IsActive    bool   `json:"isActive"`
 }
 

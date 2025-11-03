@@ -12,6 +12,7 @@ var tables = []string{
 	models.Tenant{}.TableName(),
 	models.Category{}.TableName(),
 	models.Product{}.TableName(),
+	models.Order{}.TableName(),
 }
 
 func CleanDatabase(t *testing.T) {
