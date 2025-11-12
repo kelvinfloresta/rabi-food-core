@@ -12,5 +12,9 @@ func (c *UserCase) GetByID(ctx context.Context, filter g.GetByIDFilter) (*g.GetB
 		filter.TenantID = session.TenantID
 	}
 
+	if filter.ID == "me" {
+		filter.ID = ""
+	}
+
 	return c.gateway.GetByID(filter)
 }
