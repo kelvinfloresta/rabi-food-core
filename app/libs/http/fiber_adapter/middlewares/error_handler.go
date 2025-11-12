@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"errors"
+	"rabi-food-core/libs/errs"
 	"rabi-food-core/libs/logger"
 	lib "rabi-food-core/libs/validator"
 
@@ -17,11 +19,16 @@ type ValidationErrorResponse struct {
 // ErrorHandler is a middleware that handles errors occurring during request processing.
 func ErrorHandler(ctx *fiber.Ctx, err error) error {
 	//nolint:errorlint
-	errs, ok := err.(validator.ValidationErrors)
+	validationErr, ok := err.(validator.ValidationErrors)
 	if ok {
 		return ctx.Status(fiber.StatusBadRequest).JSON(ValidationErrorResponse{
-			Errors: lib.ParseValidationError(errs),
+			Errors: lib.ParseValidationError(validationErr),
 		})
+	}
+
+	var appErr *errs.AppError
+	if errors.As(err, &appErr) {
+		return ctx.Status(appErr.Status).JSON(appErr)
 	}
 
 	logger.L().Error().Err(err).Msg("internal server error")
