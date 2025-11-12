@@ -45,6 +45,8 @@ func (orderFixture) Create(t *testing.T, input *order_case.CreateInput, token st
 
 func (orderFixture) GetByID(t *testing.T, id string, token string) (order_gateway.GetByIDOutput, int) {
 	t.Helper()
+	require.NotEmpty(t, id)
+
 	found := order_gateway.GetByIDOutput{}
 
 	obj := httpexpect.Default(t, AppURL).
