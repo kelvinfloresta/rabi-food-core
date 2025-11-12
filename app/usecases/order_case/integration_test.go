@@ -164,13 +164,38 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 	})
 
 	t.Run("should ignore provided tenantID and use token tenant when user is not backoffice", func() {
-		t.T().Skipf("This endpoint does not accept tenantID in the input for now")
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		productID := fixtures.Product.Create(t.T(), nil, token)
+		Body := map[string]any{
+			"tenantId": anotherTenant.ID,
+			"notes":    "Notes",
+			"items": []map[string]any{
+				{"productId": productID, "quantity": 1},
+			},
+		}
+
+		orderID := httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusCreated).
+			Body().NotEmpty().Raw()
+
+		orderFound, httpStatus := fixtures.Order.GetByID(t.T(), orderID, token)
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal("Notes", orderFound.Notes)
+
+		t.Len(orderFound.Items, 1)
+		t.Equal(productID, orderFound.Items[0].ProductID)
 	})
 }
 
 func (t *TestSuite) Test_OrderIntegration_GetByID() {
 	t.Run("should be able to get by id", func() {
-		t.T().Skipf("Skipping until OrderItem creation is implemented")
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 		orderID := fixtures.Order.Create(t.T(), nil, token)
@@ -183,7 +208,6 @@ func (t *TestSuite) Test_OrderIntegration_GetByID() {
 	})
 
 	t.Run("should return NotFound when get by id not found", func() {
-		t.T().Skipf("Skipping until OrderItem creation is implemented")
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 		_ = fixtures.Order.Create(t.T(), nil, token)
@@ -199,7 +223,6 @@ func (t *TestSuite) Test_OrderIntegration_GetByID() {
 	})
 
 	t.Run("should not be able to get a order from another tenant", func() {
-		t.T().Skipf("Skipping until OrderItem creation is implemented")
 		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
 		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
 		anotherOrderID := fixtures.Order.Create(t.T(), nil, anotherToken)
@@ -323,7 +346,6 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 
 func (t *TestSuite) Test_OrderIntegration_Delete() {
 	t.Run("should be able to delete", func() {
-		t.T().Skipf("Skipping until OrderItem creation is implemented")
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
 		orderID := fixtures.Order.Create(t.T(), nil, token)
@@ -342,7 +364,6 @@ func (t *TestSuite) Test_OrderIntegration_Delete() {
 	})
 
 	t.Run("should not be able to delete a order from another tenant", func() {
-		t.T().Skipf("Skipping until OrderItem creation is implemented")
 		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
 		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
 		anotherOrderID := fixtures.Order.Create(t.T(), nil, anotherToken)
