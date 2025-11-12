@@ -2,12 +2,12 @@ package order_case
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"rabi-food-core/app_context"
 	"rabi-food-core/domain"
 	g "rabi-food-core/libs/database/gateways/order_gateway"
 	"rabi-food-core/libs/database/gateways/product_gateway"
+	"rabi-food-core/libs/errs"
 	"rabi-food-core/libs/logger"
 
 	"github.com/google/uuid"
@@ -35,11 +35,12 @@ func (c *OrderCase) Create(ctx context.Context, input CreateInput) (string, erro
 	}
 
 	if len(products) == 0 {
-		return "", errors.New("no products found for the given IDs")
+		return "", errs.ErrProductNotFound
 	}
 
 	if len(products) != len(input.Items) {
-		return "", fmt.Errorf("some products not found for the given IDs: %v, found: %v", productIds, products)
+		logger.Get(ctx).Warn().Msgf("some products not found for the given IDs: %v, found: %v", productIds, products)
+		return "", errs.ErrProductNotFound
 	}
 
 	productMap := make(map[string]product_gateway.ListOutput)

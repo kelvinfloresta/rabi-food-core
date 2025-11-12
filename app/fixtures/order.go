@@ -3,6 +3,7 @@ package fixtures
 import (
 	"net/http"
 	"rabi-food-core/libs/database/gateways/order_gateway"
+	"rabi-food-core/usecases/order_case"
 	"testing"
 
 	"github.com/gavv/httpexpect/v2"
@@ -15,12 +16,18 @@ type orderFixture struct {
 
 var Order = orderFixture{"/order/"}
 
-func (orderFixture) Create(t *testing.T, input *order_gateway.CreateInput, token string) string {
+func (orderFixture) Create(t *testing.T, input *order_case.CreateInput, token string) string {
 	t.Helper()
 	Body := input
 	if Body == nil {
-		Body = &order_gateway.CreateInput{
-			Notes: "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+		Body = &order_case.CreateInput{
+			Items: []order_case.OrderItem{
+				{
+					ProductID: Product.Create(t, nil, token),
+					Quantity:  1,
+				},
+			},
+			Notes: "Notes",
 		}
 	}
 
