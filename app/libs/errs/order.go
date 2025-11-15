@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	ErrProductNotFound = newErr("PRODUCT_NOT_FOUND", http.StatusNotFound)
+	ErrProductNotFound     = newErr("PRODUCT_NOT_FOUND", http.StatusNotFound)
+	ErrStatusNotModifiable = newErr("STATUS_NOT_MODIFIABLE", http.StatusBadRequest)
 )
 
 func ProductNotFound(productIDs ...string) *AppError {
@@ -20,6 +21,16 @@ func ProductNotFound(productIDs ...string) *AppError {
 
 	// To allow errors.Is checks
 	e.err = ErrProductNotFound
+
+	return &e
+}
+
+func StatusNotModifiable(status string) *AppError {
+	e := *ErrStatusNotModifiable
+	e.Code = fmt.Sprintf("%s__%s", ErrStatusNotModifiable.Code, status)
+
+	// To allow errors.Is checks
+	e.err = ErrStatusNotModifiable
 
 	return &e
 }
