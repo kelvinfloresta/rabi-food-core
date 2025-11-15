@@ -1,7 +1,5 @@
 package order
 
-import "slices"
-
 // PaymentStatus tracks the financial lifecycle, independent from production/delivery.
 type PaymentStatus string
 
@@ -14,15 +12,19 @@ const (
 	PaymentRefunded   PaymentStatus = "refunded"   // refunded after capture
 )
 
-var paymentAllowed = map[PaymentStatus][]PaymentStatus{
-	PaymentPending:    {PaymentAuthorized, PaymentPaid, PaymentFailed, PaymentCancelled},
-	PaymentAuthorized: {PaymentPaid, PaymentCancelled, PaymentFailed},
-	PaymentPaid:       {PaymentRefunded},
-	PaymentFailed:     {}, // terminal; new attempt = new intent
-	PaymentCancelled:  {}, // terminal for this intent
-	PaymentRefunded:   {}, // terminal
+var paymentStatusPrerequisites = map[PaymentStatus][]PaymentStatus{
+	PaymentPending:    {},
+	PaymentAuthorized: {PaymentPending},
+	PaymentPaid:       {PaymentAuthorized},
+	PaymentFailed:     {PaymentPending},
+	PaymentCancelled:  {PaymentAuthorized},
+	PaymentRefunded:   {PaymentPaid},
 }
 
-func (from PaymentStatus) CanTransition(to PaymentStatus) bool {
-	return slices.Contains(paymentAllowed[from], to)
+func (p PaymentStatus) GetPrerequisites() []PaymentStatus {
+	return paymentStatusPrerequisites[p]
+}
+
+func (p PaymentStatus) String() string {
+	return string(p)
 }
