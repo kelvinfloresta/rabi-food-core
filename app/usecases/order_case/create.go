@@ -40,6 +40,7 @@ func (c *OrderCase) Create(ctx context.Context, input CreateInput) (string, erro
 
 	if len(products) != len(input.Items) {
 		logger.Get(ctx).Warn().Msgf("some products not found for the given IDs: %v, found: %v", productIds, products)
+
 		return "", errs.ErrProductNotFound
 	}
 
@@ -53,7 +54,9 @@ func (c *OrderCase) Create(ctx context.Context, input CreateInput) (string, erro
 	for _, item := range input.Items {
 		product, exists := productMap[item.ProductID]
 		if !exists {
-			return "", fmt.Errorf("product with ID %s not found", item.ProductID)
+			logger.Get(ctx).Warn().Msgf("product not found for ID: %s", item.ProductID)
+
+			return "", errs.ProductNotFound(item.ProductID)
 		}
 
 		itemTotal := product.Price * item.Quantity
