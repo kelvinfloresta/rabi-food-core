@@ -64,7 +64,6 @@ type PatchValues struct {
 	PaymentStatus     order.PaymentStatus     `json:"paymentStatus"`
 	FulfillmentStatus order.FulfillmentStatus `json:"fulfillmentStatus"`
 	DeliveryStatus    order.DeliveryStatus    `json:"deliveryStatus"`
-	Notes             string                  `json:"notes"`
 }
 
 type PaginateFilter struct {

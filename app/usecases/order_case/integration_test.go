@@ -298,13 +298,20 @@ func (t *TestSuite) Test_OrderIntegration_Paginate() {
 }
 
 func (t *TestSuite) Test_OrderIntegration_Patch() {
-	t.Run("should be able to patch the notes", func() {
+	t.Run("should not be able to patch the notes even if is a backoffice user", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
-		orderID := fixtures.Order.Create(t.T(), nil, token)
+		token := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
+		productID := fixtures.Product.Create(t.T(), nil, token)
+		newOrder := &order_case.CreateInput{
+			Items: []order_case.OrderItem{
+				{ProductID: productID, Quantity: 1},
+			},
+			Notes: "Notes",
+		}
+		orderID := fixtures.Order.Create(t.T(), newOrder, token)
 
-		Body := order_gateway.PatchValues{
-			Notes: "Updated Notes",
+		Body := map[string]any{
+			"notes": "Updated Notes",
 		}
 
 		httpexpect.Default(t.T(), fixtures.AppURL).
@@ -312,14 +319,14 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 			WithHeader("Authorization", "Bearer "+token).
 			WithJSON(Body).
 			Expect().
-			Status(http.StatusOK).
+			Status(http.StatusNotFound).
 			Body().NotEmpty()
 
 		found, status := fixtures.Order.GetByID(t.T(), orderID, token)
 
 		t.Equal(http.StatusOK, status)
 		t.Equal(orderID, found.ID)
-		t.Equal("Updated Notes", found.Notes)
+		t.Equal("Notes", found.Notes)
 	})
 
 	t.Run("should not be able to patch a order from another tenant", func() {
