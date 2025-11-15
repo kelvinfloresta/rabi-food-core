@@ -1,7 +1,9 @@
 package errs
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 )
 
 var (
@@ -14,4 +16,20 @@ var (
 
 	ErrProductNotFound = newErr("PRODUCT_NOT_FOUND", http.StatusNotFound)
 	ErrOrderInvalid    = newErr("ORDER_INVALID", http.StatusBadRequest)
+
+	ErrMissingParameter = newErr("MISSING_PARAMETER", http.StatusBadRequest)
 )
+
+func ProductNotFound(productIDs ...string) *AppError {
+	if len(productIDs) == 0 {
+		return ErrProductNotFound
+	}
+
+	e := *ErrProductNotFound
+	e.Code = fmt.Sprintf("%s__%s", ErrProductNotFound.Code, strings.Join(productIDs, "_"))
+
+	// To allow errors.Is checks
+	e.err = ErrProductNotFound
+
+	return &e
+}
