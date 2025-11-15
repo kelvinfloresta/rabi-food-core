@@ -1,7 +1,7 @@
 package models
 
 import (
-	"rabi-food-core/domain"
+	"rabi-food-core/domain/order"
 	"time"
 
 	"gorm.io/datatypes"
@@ -15,10 +15,12 @@ type Order struct {
 	UserID   string `gorm:"type:uuid;not null"`
 	User     User
 
-	Code       string             `gorm:"uniqueIndex;not null"`
-	Status     domain.OrderStatus `gorm:"type:varchar(20);not null"`
-	Notes      string             `gorm:"type:text"`
-	TotalPrice uint               `gorm:"not null"`
+	Code              string                  `gorm:"uniqueIndex;not null"`
+	DeliveryStatus    order.DeliveryStatus    `gorm:"type:varchar(20);not null"`
+	FulfillmentStatus order.FulfillmentStatus `gorm:"type:varchar(20);not null"`
+	PaymentStatus     order.PaymentStatus     `gorm:"type:varchar(20);not null"`
+	Notes             string                  `gorm:"type:text"`
+	TotalPrice        uint                    `gorm:"not null"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

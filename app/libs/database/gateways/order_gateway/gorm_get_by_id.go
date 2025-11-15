@@ -32,14 +32,16 @@ func (g *GormOrderGatewayAdapter) GetByID(filter GetByIDFilter) (*GetByIDOutput,
 	}
 
 	adapted := GetByIDOutput{
-		ID:         output.ID,
-		TenantID:   output.TenantID,
-		Code:       output.Code,
-		Status:     output.Status,
-		Notes:      output.Notes,
-		TotalPrice: output.TotalPrice,
-		Items:      items,
-		CreatedAt:  output.CreatedAt,
+		ID:                output.ID,
+		TenantID:          output.TenantID,
+		Code:              output.Code,
+		PaymentStatus:     output.PaymentStatus,
+		FulfillmentStatus: output.FulfillmentStatus,
+		DeliveryStatus:    output.DeliveryStatus,
+		Notes:             output.Notes,
+		TotalPrice:        output.TotalPrice,
+		Items:             items,
+		CreatedAt:         output.CreatedAt,
 	}
 
 	return &adapted, nil

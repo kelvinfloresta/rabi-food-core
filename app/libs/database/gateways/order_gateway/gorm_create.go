@@ -17,14 +17,16 @@ func (g *GormOrderGatewayAdapter) Create(input CreateInput) (string, error) {
 	}
 
 	result := g.DB.Conn.Create(&models.Order{
-		ID:         id,
-		TenantID:   input.TenantID,
-		UserID:     input.UserID,
-		Code:       input.Code,
-		Status:     input.Status,
-		Notes:      input.Notes,
-		TotalPrice: input.TotalPrice,
-		Items:      items,
+		ID:                id,
+		TenantID:          input.TenantID,
+		UserID:            input.UserID,
+		Code:              input.Code,
+		FulfillmentStatus: input.FulfillmentStatus,
+		DeliveryStatus:    input.DeliveryStatus,
+		PaymentStatus:     input.PaymentStatus,
+		Notes:             input.Notes,
+		TotalPrice:        input.TotalPrice,
+		Items:             items,
 	})
 
 	return id, result.Error

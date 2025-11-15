@@ -24,8 +24,16 @@ func (g *GormOrderGatewayAdapter) Paginate(
 		query = query.Where("created_at <= ?", filter.CreatedAtTo)
 	}
 
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
+	if filter.FulfillmentStatus != "" {
+		query = query.Where("fulfillment_status = ?", filter.FulfillmentStatus)
+	}
+
+	if filter.DeliveryStatus != "" {
+		query = query.Where("delivery_status = ?", filter.DeliveryStatus)
+	}
+
+	if filter.PaymentStatus != "" {
+		query = query.Where("payment_status = ?", filter.PaymentStatus)
 	}
 
 	if filter.TenantID != nil {
