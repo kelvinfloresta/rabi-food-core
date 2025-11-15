@@ -2,12 +2,6 @@ package errs
 
 import (
 	"fmt"
-	"net/http"
-)
-
-var (
-	ErrProductNotFound = newErr("PRODUCT_NOT_FOUND", http.StatusNotFound)
-	ErrOrderInvalid    = newErr("ORDER_INVALID", http.StatusBadRequest)
 )
 
 type AppError struct {
