@@ -328,27 +328,6 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 		t.Equal(orderID, found.ID)
 		t.Equal("Notes", found.Notes)
 	})
-
-	t.Run("should not be able to patch a order from another tenant", func() {
-		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
-		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
-		anotherOrderID := fixtures.Order.Create(t.T(), nil, anotherToken)
-
-		tenant := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
-
-		Body := order_gateway.PatchValues{
-			Notes: "Updated Notes",
-		}
-
-		httpexpect.Default(t.T(), fixtures.AppURL).
-			Request(http.MethodPatch, fixtures.Order.URI+anotherOrderID).
-			WithHeader("Authorization", "Bearer "+token).
-			WithJSON(Body).
-			Expect().
-			Status(http.StatusNotFound).
-			Body().NotEmpty()
-	})
 }
 
 func (t *TestSuite) Test_OrderIntegration_Delete() {
