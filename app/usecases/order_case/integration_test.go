@@ -328,6 +328,10 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 		t.Equal(orderID, found.ID)
 		t.Equal("Notes", found.Notes)
 	})
+
+	t.Run("should only allow common users to patch the status to cancel", func() {
+		t.T().Skipf("Skipping until business logic is defined")
+	})
 }
 
 func (t *TestSuite) Test_OrderIntegration_Delete() {
