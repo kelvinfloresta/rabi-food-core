@@ -7,7 +7,7 @@ import (
 type AppError struct {
 	Code   string `json:"code"`
 	Status int    `json:"status"`
-	Err    error  `json:"-"`
+	err    error  `json:"-"`
 }
 
 func newErr(code string, status int) *AppError {
@@ -15,27 +15,15 @@ func newErr(code string, status int) *AppError {
 }
 
 func (e *AppError) Error() string {
-	if e.Err != nil {
-		return fmt.Sprintf("%s: %v", e.Code, e.Err)
+	if e.err != nil {
+		return fmt.Sprintf("%s: %v", e.Code, e.err)
 	}
 
 	return e.Code
 }
 
 func (e *AppError) Unwrap() error {
-	return e.Err
-}
-
-func (e *AppError) Wrap(cause error) *AppError {
-	if e == nil {
-		return nil
-	}
-
-	return &AppError{
-		Code:   e.Code,
-		Status: e.Status,
-		Err:    cause,
-	}
+	return e.err
 }
 
 func (e *AppError) MarshalJSON() ([]byte, error) {
