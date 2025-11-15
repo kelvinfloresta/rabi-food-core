@@ -5,9 +5,13 @@ import (
 	"rabi-food-core/libs/database/gorm_adapter/models"
 )
 
+var (
+	ErrMustFilterByIDOrTenantID = errors.New("must filter by either ID or TenantID")
+)
+
 func (g *GormUserGatewayAdapter) GetByID(filter GetByIDFilter) (*GetByIDOutput, error) {
 	if filter.ID == "" && filter.TenantID == "" {
-		return nil, errors.New("must filter by either ID or TenantID")
+		return nil, ErrMustFilterByIDOrTenantID
 	}
 
 	output := &models.User{}
