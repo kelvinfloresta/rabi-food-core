@@ -53,8 +53,11 @@ type GetByIDOutput struct {
 }
 
 type PatchFilter struct {
-	ID       string `json:"id"`
-	TenantID string `json:"tenantId"`
+	ID                  string
+	TenantID            string
+	DeliveryStatusIn    []order.DeliveryStatus
+	FulfillmentStatusIn []order.FulfillmentStatus
+	PaymentStatusIn     []order.PaymentStatus
 }
 
 type PatchValues struct {

@@ -11,6 +11,18 @@ func (g *GormOrderGatewayAdapter) Patch(filter PatchFilter, newValues PatchValue
 		query = query.Where("tenant_id = ?", filter.TenantID)
 	}
 
+	if len(filter.DeliveryStatusIn) > 0 {
+		query = query.Where("delivery_status IN ?", filter.DeliveryStatusIn)
+	}
+
+	if len(filter.FulfillmentStatusIn) > 0 {
+		query = query.Where("fulfillment_status IN ?", filter.FulfillmentStatusIn)
+	}
+
+	if len(filter.PaymentStatusIn) > 0 {
+		query = query.Where("payment_status IN ?", filter.PaymentStatusIn)
+	}
+
 	result := query.Updates(newValues)
 
 	return result.RowsAffected > 0, result.Error
