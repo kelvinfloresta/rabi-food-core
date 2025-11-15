@@ -1,12 +1,10 @@
 package order
 
-import "slices"
-
 // DeliveryStatus tracks the last-mile logistics lifecycle.
 // If the order is pickup-at-store only, it can remain "pending" and jump to "delivered".
 type DeliveryStatus string
 
-const (
+var (
 	DeliveryPending   DeliveryStatus = "pending"          // awaiting fulfillment=ready
 	DeliveryAssigned  DeliveryStatus = "assigned"         // driver assigned / courier matched
 	DeliveryPickedUp  DeliveryStatus = "picked_up"        // courier picked up at store
@@ -16,14 +14,20 @@ const (
 	DeliveryRefunded  DeliveryStatus = "refunded"         // refunded after delivery/charge
 )
 
-var deliveryAllowed = map[DeliveryStatus][]DeliveryStatus{
-	DeliveryPending:   {DeliveryAssigned, DeliveryCancelled},
-	DeliveryAssigned:  {DeliveryPickedUp, DeliveryCancelled},
-	DeliveryPickedUp:  {DeliveryOutFor, DeliveryCancelled},
-	DeliveryOutFor:    {DeliveryDelivered, DeliveryRefunded},
-	DeliveryDelivered: {DeliveryRefunded},
+var deliveryStatusPrerequisites = map[DeliveryStatus][]DeliveryStatus{
+	DeliveryPending:   {},
+	DeliveryAssigned:  {DeliveryPending},
+	DeliveryPickedUp:  {DeliveryAssigned},
+	DeliveryOutFor:    {DeliveryPickedUp},
+	DeliveryDelivered: {DeliveryOutFor},
+	DeliveryCancelled: {DeliveryPending, DeliveryAssigned},
+	DeliveryRefunded:  {DeliveryDelivered},
 }
 
-func (from DeliveryStatus) CanTransition(to DeliveryStatus) bool {
-	return slices.Contains(deliveryAllowed[from], to)
+func (d DeliveryStatus) GetPrerequisites() []DeliveryStatus {
+	return deliveryStatusPrerequisites[d]
+}
+
+func (d DeliveryStatus) String() string {
+	return string(d)
 }
