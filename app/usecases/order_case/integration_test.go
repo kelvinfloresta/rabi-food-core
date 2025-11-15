@@ -41,8 +41,8 @@ func TestMySuite(t *testing.T) {
 func (t *TestSuite) Test_OrderIntegration_Create() {
 	t.Run("should be able to create an order successfully with valid products", func() {
 		EXPECTED_PRODUCT_NAME := "Product Name"
-		EXPECTED_PRODUCT_PRICE := uint(100)
-		EXPECTED_TOTAL_PRICE := uint(100)
+		EXPECTED_PRODUCT_PRICE := 100
+		EXPECTED_TOTAL_PRICE := 100
 
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
