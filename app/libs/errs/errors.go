@@ -2,6 +2,11 @@ package errs
 
 import (
 	"fmt"
+	"net/http"
+)
+
+var (
+	ErrForbidden = newErr("forbidden", http.StatusForbidden)
 )
 
 type AppError struct {
