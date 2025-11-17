@@ -17,7 +17,7 @@ type PatchFilter struct {
 func (c *OrderCase) Patch(
 	ctx context.Context,
 	filter PatchFilter,
-	values g.PatchValues,
+	newValues g.PatchValues,
 ) (bool, error) {
 	session := app_context.GetSession(ctx)
 	if !session.Role.IsBackoffice() {
@@ -29,26 +29,26 @@ func (c *OrderCase) Patch(
 	}
 
 	deliveryStatusIn := []order.DeliveryStatus(nil)
-	if values.DeliveryStatus != "" {
-		deliveryStatusIn = values.DeliveryStatus.GetPrerequisites()
+	if newValues.DeliveryStatus != "" {
+		deliveryStatusIn = newValues.DeliveryStatus.GetPrerequisites()
 		if len(deliveryStatusIn) == 0 {
-			return false, errs.StatusNotModifiable(values.DeliveryStatus)
+			return false, errs.StatusNotModifiable(newValues.DeliveryStatus)
 		}
 	}
 
 	fulfillmentStatusIn := []order.FulfillmentStatus(nil)
-	if values.FulfillmentStatus != "" {
-		fulfillmentStatusIn = values.FulfillmentStatus.GetPrerequisites()
+	if newValues.FulfillmentStatus != "" {
+		fulfillmentStatusIn = newValues.FulfillmentStatus.GetPrerequisites()
 		if len(fulfillmentStatusIn) == 0 {
-			return false, errs.StatusNotModifiable(values.FulfillmentStatus)
+			return false, errs.StatusNotModifiable(newValues.FulfillmentStatus)
 		}
 	}
 
 	paymentStatusIn := []order.PaymentStatus(nil)
-	if values.PaymentStatus != "" {
-		paymentStatusIn = values.PaymentStatus.GetPrerequisites()
+	if newValues.PaymentStatus != "" {
+		paymentStatusIn = newValues.PaymentStatus.GetPrerequisites()
 		if len(paymentStatusIn) == 0 {
-			return false, errs.StatusNotModifiable(values.PaymentStatus)
+			return false, errs.StatusNotModifiable(newValues.PaymentStatus)
 		}
 	}
 
@@ -58,7 +58,7 @@ func (c *OrderCase) Patch(
 		DeliveryStatusIn:    deliveryStatusIn,
 		FulfillmentStatusIn: fulfillmentStatusIn,
 		PaymentStatusIn:     paymentStatusIn,
-	}, values)
+	}, newValues)
 
 	if err != nil {
 		return false, err
@@ -68,11 +68,10 @@ func (c *OrderCase) Patch(
 		return true, nil
 	}
 
-	logger.Get(ctx).Warn().Str("orderID", filter.ID).Msg("order not patched")
-	return c.handleNotPatched(ctx, filter, values)
+	return c.handleNotPatched(ctx, filter, newValues)
 }
 
-func (c *OrderCase) handleNotPatched(ctx context.Context, filter PatchFilter, values g.PatchValues) (bool, error) {
+func (c *OrderCase) handleNotPatched(ctx context.Context, filter PatchFilter, newValues g.PatchValues) (bool, error) {
 	l := logger.Get(ctx).Warn().Str("orderID", filter.ID)
 
 	l.Msg("checking if order exists for not patched case")
@@ -90,19 +89,19 @@ func (c *OrderCase) handleNotPatched(ctx context.Context, filter PatchFilter, va
 		return false, nil
 	}
 
-	if !orderFound.FulfillmentStatus.CanTransitionTo(values.FulfillmentStatus) {
+	if !orderFound.FulfillmentStatus.CanTransitionTo(newValues.FulfillmentStatus) {
 		l.Msg("fulfillment status cannot be transitioned to target status")
-		return false, errs.InvalidTranstion(orderFound.FulfillmentStatus, values.FulfillmentStatus)
+		return false, errs.InvalidTranstion(orderFound.FulfillmentStatus, newValues.FulfillmentStatus)
 	}
 
-	if !orderFound.PaymentStatus.CanTransitionTo(values.PaymentStatus) {
+	if !orderFound.PaymentStatus.CanTransitionTo(newValues.PaymentStatus) {
 		l.Msg("payment status cannot be transitioned to target status")
-		return false, errs.InvalidTranstion(orderFound.PaymentStatus, values.PaymentStatus)
+		return false, errs.InvalidTranstion(orderFound.PaymentStatus, newValues.PaymentStatus)
 	}
 
-	if !orderFound.DeliveryStatus.CanTransitionTo(values.DeliveryStatus) {
+	if !orderFound.DeliveryStatus.CanTransitionTo(newValues.DeliveryStatus) {
 		l.Msg("delivery status cannot be transitioned to target status")
-		return false, errs.InvalidTranstion(orderFound.DeliveryStatus, values.DeliveryStatus)
+		return false, errs.InvalidTranstion(orderFound.DeliveryStatus, newValues.DeliveryStatus)
 	}
 
 	l.Msg("order exists but was not patched for unknown reasons")
