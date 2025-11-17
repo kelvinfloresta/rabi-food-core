@@ -19,8 +19,12 @@ func (c *OrderCase) Patch(
 	values g.PatchValues,
 ) (bool, error) {
 	session := app_context.GetSession(ctx)
-	if session.Role.IsUser() {
+	if !session.Role.IsBackoffice() {
 		filter.TenantID = session.TenantID
+	}
+
+	if session.Role.IsUser() {
+		return false, errs.ErrForbidden
 	}
 
 	deliveryStatusIn := []order.DeliveryStatus(nil)
