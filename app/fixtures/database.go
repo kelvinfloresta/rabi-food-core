@@ -5,11 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm/logger"
 )
 
 var tables = []string{
 	models.User{}.TableName(),
+	models.Tenant{}.TableName(),
+	models.Category{}.TableName(),
+	models.Product{}.TableName(),
+	models.Order{}.TableName(),
 }
 
 func CleanDatabase(t *testing.T) {
@@ -19,7 +22,6 @@ func CleanDatabase(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	testDB.Conn.Logger = logger.Default.LogMode(logger.Info)
 	for _, table := range tables {
 		err := testDB.Conn.Exec("TRUNCATE " + table + " CASCADE").Error
 		require.NoError(t, err)

@@ -1,0 +1,505 @@
+package order_case_test
+
+import (
+	"net/http"
+	"rabi-food-core/domain/order"
+	"rabi-food-core/fixtures"
+	"rabi-food-core/libs/database"
+	"rabi-food-core/libs/database/gateways/order_gateway"
+	"rabi-food-core/libs/database/gateways/product_gateway"
+	"rabi-food-core/libs/errs"
+	"rabi-food-core/usecases/order_case"
+	"testing"
+
+	"github.com/gavv/httpexpect/v2"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+)
+
+type TestSuite struct {
+	suite.Suite
+
+	app *fixtures.App
+}
+
+func (t *TestSuite) SetupSuite() {
+	t.app = fixtures.NewApp()
+	t.app.Start(t.T())
+}
+
+func (t *TestSuite) SetupSubTest() {
+	fixtures.CleanDatabase(t.T())
+}
+
+func (t *TestSuite) TearDownSuite() {
+	t.app.Stop(t.T())
+}
+
+func TestMySuite(t *testing.T) {
+	suite.Run(t, new(TestSuite))
+}
+
+func (t *TestSuite) Test_OrderIntegration_Create() {
+	t.Run("should be able to create an order successfully with valid products", func() {
+		EXPECTED_PRODUCT_NAME := "Product Name"
+		EXPECTED_PRODUCT_PRICE := 100
+		EXPECTED_TOTAL_PRICE := 100
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		productID := fixtures.Product.Create(t.T(), &product_gateway.CreateInput{
+			Name:       "Product Name",
+			CategoryID: fixtures.Category.Create(t.T(), nil, token),
+			Price:      100,
+			IsActive:   true,
+		}, token)
+
+		Body := order_case.CreateInput{
+			Notes: "Notes",
+			Items: []order_case.OrderItem{
+				{ProductID: productID, Quantity: 1},
+			},
+		}
+
+		orderID := httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusCreated).
+			Body().NotEmpty().Raw()
+
+		orderFound, httpStatus := fixtures.Order.GetByID(t.T(), orderID, token)
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal("Notes", orderFound.Notes)
+
+		t.Len(orderFound.Items, 1)
+		t.Equal(productID, orderFound.Items[0].ProductID)
+		t.Equal(EXPECTED_PRODUCT_NAME, orderFound.Items[0].ProductName)
+		t.EqualValues(EXPECTED_PRODUCT_PRICE, orderFound.Items[0].UnitPrice)
+		t.EqualValues(EXPECTED_TOTAL_PRICE, orderFound.TotalPrice)
+	})
+
+	t.Run("should correctly calculate total price from multiple items", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		productID1 := fixtures.Product.Create(t.T(), nil, token)
+		productID2 := fixtures.Product.Create(t.T(), nil, token)
+
+		Body := order_case.CreateInput{
+			Notes: "Notes",
+			Items: []order_case.OrderItem{
+				{ProductID: productID1, Quantity: 1},
+				{ProductID: productID2, Quantity: 2},
+			},
+		}
+
+		orderID := httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusCreated).
+			Body().NotEmpty().Raw()
+
+		orderFound, httpStatus := fixtures.Order.GetByID(t.T(), orderID, token)
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal("Notes", orderFound.Notes)
+
+		t.Len(orderFound.Items, 2)
+		t.Equal(productID1, orderFound.Items[0].ProductID)
+		t.EqualValues(300, orderFound.TotalPrice)
+
+		t.EqualValues(1, orderFound.Items[0].Quantity)
+		t.EqualValues(100, orderFound.Items[0].UnitPrice)
+		t.EqualValues(100, orderFound.Items[0].Total)
+
+		t.Equal(productID2, orderFound.Items[1].ProductID)
+		t.EqualValues(2, orderFound.Items[1].Quantity)
+		t.EqualValues(100, orderFound.Items[1].UnitPrice)
+		t.EqualValues(200, orderFound.Items[1].Total)
+	})
+
+	t.Run("should fail when no products are found for given IDs", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		nonExistingProductID := uuid.NewString()
+
+		Body := order_case.CreateInput{
+			Notes: "Notes",
+			Items: []order_case.OrderItem{
+				{ProductID: nonExistingProductID, Quantity: 1},
+			},
+		}
+
+		expectedError := errs.ProductNotFound(nonExistingProductID)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound).
+			JSON().Object().
+			Value("code").IsEqual(expectedError.Code)
+
+	})
+
+	t.Run("should fail when some product IDs are missing in the database", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		existingProductID := fixtures.Product.Create(t.T(), nil, token)
+
+		nonExistingProductID := uuid.NewString()
+		Body := order_case.CreateInput{
+			Notes: "Notes",
+			Items: []order_case.OrderItem{
+				{ProductID: existingProductID, Quantity: 1},
+				{ProductID: nonExistingProductID, Quantity: 1},
+			},
+		}
+
+		expectedError := errs.ProductNotFound(nonExistingProductID)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound).
+			JSON().Object().
+			Value("code").IsEqual(expectedError.Code)
+	})
+
+	t.Run("should ignore provided tenantID and use token tenant when user is not backoffice", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		productID := fixtures.Product.Create(t.T(), nil, token)
+		Body := map[string]any{
+			"tenantId": anotherTenant.ID,
+			"notes":    "Notes",
+			"items": []map[string]any{
+				{"productId": productID, "quantity": 1},
+			},
+		}
+
+		orderID := httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusCreated).
+			Body().NotEmpty().Raw()
+
+		orderFound, httpStatus := fixtures.Order.GetByID(t.T(), orderID, token)
+		t.Equal(http.StatusOK, httpStatus)
+		t.Equal("Notes", orderFound.Notes)
+
+		t.Len(orderFound.Items, 1)
+		t.Equal(productID, orderFound.Items[0].ProductID)
+	})
+
+	t.Run("should not be able to create an order with inactive products", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		productID := fixtures.Product.Create(t.T(), &product_gateway.CreateInput{
+			Name:       "Inactive Product",
+			CategoryID: fixtures.Category.Create(t.T(), nil, token),
+			Price:      100,
+			IsActive:   false,
+		}, token)
+
+		Body := order_case.CreateInput{
+			Notes: "Notes",
+			Items: []order_case.OrderItem{
+				{ProductID: productID, Quantity: 1},
+			},
+		}
+
+		execpectedError := errs.ProductNotFound(productID)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound).
+			JSON().Object().
+			Value("code").IsEqual(execpectedError.Code)
+	})
+}
+
+func (t *TestSuite) Test_OrderIntegration_GetByID() {
+	t.Run("should be able to get by id", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		orderID := fixtures.Order.Create(t.T(), nil, token)
+
+		found, status := fixtures.Order.GetByID(t.T(), orderID, token)
+
+		t.Equal(http.StatusOK, status)
+		t.Equal(orderID, found.ID)
+		t.Equal("Notes", found.Notes)
+	})
+
+	t.Run("should return NotFound when get by id not found", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		_ = fixtures.Order.Create(t.T(), nil, token)
+
+		NON_EXISTING_ID := uuid.New().String()
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Order.URI+NON_EXISTING_ID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
+
+	t.Run("should not be able to get a order from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+		anotherOrderID := fixtures.Order.Create(t.T(), nil, anotherToken)
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Order.URI+anotherOrderID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
+}
+
+func (t *TestSuite) Test_OrderIntegration_Paginate() {
+	t.Run("should be able to paginate", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		for range 15 {
+			fixtures.Order.Create(t.T(), nil, token)
+		}
+
+		response := new(order_gateway.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Len(response.Data, 10)
+		t.Equal(2, response.MaxPages)
+
+		for i := range 10 {
+			t.NotEmpty(response.Data[i].ID)
+			t.Equal("Notes", response.Data[i].Notes)
+		}
+	})
+
+	t.Run("should not be able to paginate orders from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+
+		for range 5 {
+			fixtures.Order.Create(t.T(), nil, anotherToken)
+		}
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		response := new(order_gateway.PaginateOutput)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithQueryObject(database.PaginateInput{
+				Page:     0,
+				PageSize: 10,
+			}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Decode(&response)
+
+		t.Empty(response.Data)
+		t.Equal(0, response.MaxPages)
+	})
+}
+
+func (t *TestSuite) Test_OrderIntegration_Patch() {
+	t.Run("should not be able to patch the notes even if is a backoffice user", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.StaffToken(t.T(), tenant.UserID)
+		productID := fixtures.Product.Create(t.T(), nil, token)
+		newOrder := &order_case.CreateInput{
+			Items: []order_case.OrderItem{
+				{ProductID: productID, Quantity: 1},
+			},
+			Notes: "Notes",
+		}
+
+		orderID := fixtures.Order.Create(t.T(), newOrder, token)
+
+		Body := map[string]any{
+			"notes": "Updated Notes",
+		}
+
+		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.Order.URI+orderID).
+			WithHeader("Authorization", "Bearer "+backofficeToken).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusBadRequest).
+			Body().NotEmpty()
+
+		found, status := fixtures.Order.GetByID(t.T(), orderID, token)
+
+		t.Equal(http.StatusOK, status)
+		t.Equal(orderID, found.ID)
+		t.Equal("Notes", found.Notes)
+	})
+
+	t.Run("should return forbidden when user role is user", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		orderID := fixtures.Order.Create(t.T(), nil, token)
+
+		Body := order_gateway.PatchValues{
+			FulfillmentStatus: order.FulfillmentConfirmed,
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.Order.URI+orderID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusForbidden).
+			Body().NotEmpty()
+	})
+}
+
+func (t *TestSuite) Test_OrderIntegration_Patch_status() {
+	tests := []struct {
+		name string
+		flow []order.FulfillmentStatus
+		err  *errs.AppError
+	}{
+		{
+			name: "Pending > Confirmed > In Production > Ready",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentConfirmed,
+				order.FulfillmentInProduction,
+				order.FulfillmentReady,
+			},
+		},
+		{
+			name: "Pending > In Production > error",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentInProduction,
+			},
+			err: errs.InvalidTranstion(order.FulfillmentPending, order.FulfillmentInProduction),
+		},
+		{
+			name: "Pending > Ready > error",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentReady,
+			},
+			err: errs.InvalidTranstion(order.FulfillmentPending, order.FulfillmentReady),
+		},
+		{
+			name: "Pending > Confirmed > Ready > error",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentConfirmed,
+				order.FulfillmentReady,
+			},
+			err: errs.InvalidTranstion(order.FulfillmentConfirmed, order.FulfillmentReady),
+		},
+		{
+			name: "Pending > Confirmed > In Production > Cancelled",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentConfirmed,
+				order.FulfillmentInProduction,
+				order.FulfillmentCancelled,
+			},
+		},
+		{
+			name: "Pending > Cancelled",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentCancelled,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func() {
+			tenant := fixtures.Tenant.Create(t.T(), nil)
+			token := fixtures.Auth.StaffToken(t.T(), tenant.UserID)
+			orderID := fixtures.Order.Create(t.T(), nil, token)
+
+			for i, statusToSet := range tt.flow {
+				Body := order_gateway.PatchValues{
+					FulfillmentStatus: statusToSet,
+				}
+
+				appErr := fixtures.Order.Patch(t.T(), orderID, &Body, token)
+				isLast := i == len(tt.flow)-1
+
+				if isLast && tt.err != nil {
+					require.NotNil(t.T(), appErr)
+					require.Equal(t.T(), tt.err.Code, appErr.Code)
+					return
+				}
+
+				t.Nil(appErr)
+				fixtures.Order.ExpectFulfillmentStatus(t.T(), orderID, statusToSet, token)
+			}
+		})
+	}
+
+}
+
+func (t *TestSuite) Test_OrderIntegration_Delete() {
+	t.Run("should be able to delete", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		orderID := fixtures.Order.Create(t.T(), nil, token)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodDelete, fixtures.Order.URI+orderID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNoContent)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodGet, fixtures.Order.URI+orderID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound)
+	})
+
+	t.Run("should not be able to delete a order from another tenant", func() {
+		anotherTenant := fixtures.Tenant.Create(t.T(), nil)
+		anotherToken := fixtures.Auth.UserToken(t.T(), anotherTenant.UserID)
+		anotherOrderID := fixtures.Order.Create(t.T(), nil, anotherToken)
+
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodDelete, fixtures.Order.URI+anotherOrderID).
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusNotFound).
+			Body().NotEmpty()
+	})
+}

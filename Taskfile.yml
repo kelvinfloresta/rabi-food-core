@@ -10,8 +10,16 @@ tasks:
     desc: "Start the development environment"
     dir: app
     dotenv: ["../.env.test"]
+    deps: [infra-test]
     cmds:
       - go run main.go
+    silent: false
+
+  lint:
+    desc: "Run linters using golangci-lint"
+    dir: app
+    cmds:
+      - golangci-lint run --timeout 5m
     silent: false
 
   # =============================
