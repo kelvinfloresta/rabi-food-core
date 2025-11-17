@@ -9,7 +9,7 @@ import (
 
 func (c *ProductCase) Create(ctx context.Context, input g.CreateInput) (string, error) {
 	session := app_context.GetSession(ctx)
-	if session.Role.IsUser() {
+	if !session.Role.IsBackoffice() {
 		input.TenantID = session.TenantID
 	}
 
