@@ -2,6 +2,7 @@ package order_case_test
 
 import (
 	"net/http"
+	"rabi-food-core/domain/order"
 	"rabi-food-core/fixtures"
 	"rabi-food-core/libs/database"
 	"rabi-food-core/libs/database/gateways/order_gateway"
@@ -192,6 +193,37 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 		t.Len(orderFound.Items, 1)
 		t.Equal(productID, orderFound.Items[0].ProductID)
 	})
+
+	t.Run("should not be able to create an order with inactive products", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+
+		productID := fixtures.Product.Create(t.T(), &product_gateway.CreateInput{
+			Name:       "Inactive Product",
+			CategoryID: fixtures.Category.Create(t.T(), nil, token),
+			Price:      100,
+			IsActive:   false,
+		}, token)
+
+		Body := order_case.CreateInput{
+			Notes: "Notes",
+			Items: []order_case.OrderItem{
+				{ProductID: productID, Quantity: 1},
+			},
+		}
+
+		found := &errs.AppError{}
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPost, fixtures.Order.URI).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusNotFound).
+			JSON().Object().Decode(found)
+
+		EXPECTED_CODE := errs.ProductNotFound(productID).Code
+		t.EqualValues(EXPECTED_CODE, found.Code)
+	})
 }
 
 func (t *TestSuite) Test_OrderIntegration_GetByID() {
@@ -300,7 +332,7 @@ func (t *TestSuite) Test_OrderIntegration_Paginate() {
 func (t *TestSuite) Test_OrderIntegration_Patch() {
 	t.Run("should not be able to patch the notes even if is a backoffice user", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
+		token := fixtures.Auth.StaffToken(t.T(), tenant.UserID)
 		productID := fixtures.Product.Create(t.T(), nil, token)
 		newOrder := &order_case.CreateInput{
 			Items: []order_case.OrderItem{
@@ -308,15 +340,17 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 			},
 			Notes: "Notes",
 		}
+
 		orderID := fixtures.Order.Create(t.T(), newOrder, token)
 
 		Body := map[string]any{
 			"notes": "Updated Notes",
 		}
 
+		backofficeToken := fixtures.Auth.BackofficeToken(t.T(), tenant.UserID)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPatch, fixtures.Order.URI+orderID).
-			WithHeader("Authorization", "Bearer "+token).
+			WithHeader("Authorization", "Bearer "+backofficeToken).
 			WithJSON(Body).
 			Expect().
 			Status(http.StatusNotFound).
@@ -327,6 +361,58 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 		t.Equal(http.StatusOK, status)
 		t.Equal(orderID, found.ID)
 		t.Equal("Notes", found.Notes)
+	})
+
+	t.Run("should update fulfillment status from PENDING to CONFIRMED", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.StaffToken(t.T(), tenant.UserID)
+		productID := fixtures.Product.Create(t.T(), nil, token)
+
+		orderID := fixtures.Order.Create(t.T(), &order_case.CreateInput{
+			Items: []order_case.OrderItem{
+				{ProductID: productID, Quantity: 1},
+			},
+		}, token)
+
+		Body := order_gateway.PatchValues{
+			FulfillmentStatus: order.FulfillmentConfirmed,
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.Order.URI+orderID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusOK).
+			Body().NotEmpty()
+
+		found, status := fixtures.Order.GetByID(t.T(), orderID, token)
+
+		t.Equal(http.StatusOK, status)
+		t.Equal(orderID, found.ID)
+		t.Equal(order.FulfillmentConfirmed, found.FulfillmentStatus)
+	})
+
+	t.Run("should return forbidden when user role is user", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		orderID := fixtures.Order.Create(t.T(), nil, token)
+
+		Body := order_gateway.PatchValues{
+			FulfillmentStatus: order.FulfillmentConfirmed,
+		}
+
+		httpexpect.Default(t.T(), fixtures.AppURL).
+			Request(http.MethodPatch, fixtures.Order.URI+orderID).
+			WithHeader("Authorization", "Bearer "+token).
+			WithJSON(Body).
+			Expect().
+			Status(http.StatusForbidden).
+			Body().NotEmpty()
+	})
+
+	t.Run("should update fulfillment status from confirmed to in_production", func() {
+		t.T().Skipf("Skipping until business logic is defined")
 	})
 
 	t.Run("should only allow common users to patch the status to cancel", func() {
