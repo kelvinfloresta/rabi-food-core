@@ -5,12 +5,13 @@ import (
 	"rabi-food-core/libs/database/gateways/order_gateway"
 	"rabi-food-core/libs/http/fiber_adapter/parser"
 	"rabi-food-core/libs/validator"
+	"rabi-food-core/usecases/order_case"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func (c *OrderController) Patch(ctx *fiber.Ctx) error {
-	filter := order_gateway.PatchFilter{
+	filter := order_case.PatchFilter{
 		ID: ctx.Params("id"),
 	}
 

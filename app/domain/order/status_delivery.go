@@ -1,5 +1,7 @@
 package order
 
+import "slices"
+
 // DeliveryStatus tracks the last-mile logistics lifecycle.
 // If the order is pickup-at-store only, it can remain "pending" and jump to "delivered".
 type DeliveryStatus string
@@ -26,6 +28,11 @@ var deliveryStatusPrerequisites = map[DeliveryStatus][]DeliveryStatus{
 
 func (d DeliveryStatus) GetPrerequisites() []DeliveryStatus {
 	return deliveryStatusPrerequisites[d]
+}
+
+func (d DeliveryStatus) CanTransitionTo(target DeliveryStatus) bool {
+	prerequisites := target.GetPrerequisites()
+	return slices.Contains(prerequisites, d)
 }
 
 func (d DeliveryStatus) String() string {

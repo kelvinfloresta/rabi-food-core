@@ -13,6 +13,7 @@ import (
 
 	"github.com/gavv/httpexpect/v2"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -368,36 +369,6 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 		t.Equal("Notes", found.Notes)
 	})
 
-	t.Run("should update fulfillment status from PENDING to CONFIRMED", func() {
-		tenant := fixtures.Tenant.Create(t.T(), nil)
-		token := fixtures.Auth.StaffToken(t.T(), tenant.UserID)
-		productID := fixtures.Product.Create(t.T(), nil, token)
-
-		orderID := fixtures.Order.Create(t.T(), &order_case.CreateInput{
-			Items: []order_case.OrderItem{
-				{ProductID: productID, Quantity: 1},
-			},
-		}, token)
-
-		Body := order_gateway.PatchValues{
-			FulfillmentStatus: order.FulfillmentConfirmed,
-		}
-
-		httpexpect.Default(t.T(), fixtures.AppURL).
-			Request(http.MethodPatch, fixtures.Order.URI+orderID).
-			WithHeader("Authorization", "Bearer "+token).
-			WithJSON(Body).
-			Expect().
-			Status(http.StatusOK).
-			Body().NotEmpty()
-
-		found, status := fixtures.Order.GetByID(t.T(), orderID, token)
-
-		t.Equal(http.StatusOK, status)
-		t.Equal(orderID, found.ID)
-		t.Equal(order.FulfillmentConfirmed, found.FulfillmentStatus)
-	})
-
 	t.Run("should return forbidden when user role is user", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
@@ -415,14 +386,86 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 			Status(http.StatusForbidden).
 			Body().NotEmpty()
 	})
+}
 
-	t.Run("should update fulfillment status from confirmed to in_production", func() {
-		t.T().Skipf("Skipping until business logic is defined")
-	})
+func (t *TestSuite) Test_OrderIntegration_Patch_status() {
+	tests := []struct {
+		name string
+		flow []order.FulfillmentStatus
+		err  *errs.AppError
+	}{
+		{
+			name: "Pending > Confirmed > In Production > Ready",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentConfirmed,
+				order.FulfillmentInProduction,
+				order.FulfillmentReady,
+			},
+		},
+		{
+			name: "Pending > In Production > error",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentInProduction,
+			},
+			err: errs.InvalidTranstion(order.FulfillmentPending, order.FulfillmentInProduction),
+		},
+		{
+			name: "Pending > Ready > error",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentReady,
+			},
+			err: errs.InvalidTranstion(order.FulfillmentPending, order.FulfillmentReady),
+		},
+		{
+			name: "Pending > Confirmed > Ready > error",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentConfirmed,
+				order.FulfillmentReady,
+			},
+			err: errs.InvalidTranstion(order.FulfillmentConfirmed, order.FulfillmentReady),
+		},
+		{
+			name: "Pending > Confirmed > In Production > Cancelled",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentConfirmed,
+				order.FulfillmentInProduction,
+				order.FulfillmentCancelled,
+			},
+		},
+		{
+			name: "Pending > Cancelled",
+			flow: []order.FulfillmentStatus{
+				order.FulfillmentCancelled,
+			},
+		},
+	}
 
-	t.Run("should only allow common users to patch the status to cancel", func() {
-		t.T().Skipf("Skipping until business logic is defined")
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func() {
+			tenant := fixtures.Tenant.Create(t.T(), nil)
+			token := fixtures.Auth.StaffToken(t.T(), tenant.UserID)
+			orderID := fixtures.Order.Create(t.T(), nil, token)
+
+			for i, statusToSet := range tt.flow {
+				Body := order_gateway.PatchValues{
+					FulfillmentStatus: statusToSet,
+				}
+
+				appErr := fixtures.Order.Patch(t.T(), orderID, &Body, token)
+				isLast := i == len(tt.flow)-1
+
+				if isLast && tt.err != nil {
+					require.NotNil(t.T(), appErr)
+					require.Equal(t.T(), tt.err.Code, appErr.Code)
+					return
+				}
+
+				t.Nil(appErr)
+				fixtures.Order.ExpectFulfillmentStatus(t.T(), orderID, statusToSet, token)
+			}
+		})
+	}
+
 }
 
 func (t *TestSuite) Test_OrderIntegration_Delete() {

@@ -1,5 +1,7 @@
 package order
 
+import "slices"
+
 // PaymentStatus tracks the financial lifecycle, independent from production/delivery.
 type PaymentStatus string
 
@@ -23,6 +25,11 @@ var paymentStatusPrerequisites = map[PaymentStatus][]PaymentStatus{
 
 func (p PaymentStatus) GetPrerequisites() []PaymentStatus {
 	return paymentStatusPrerequisites[p]
+}
+
+func (p PaymentStatus) CanTransitionTo(target PaymentStatus) bool {
+	prerequisites := target.GetPrerequisites()
+	return slices.Contains(prerequisites, p)
 }
 
 func (p PaymentStatus) String() string {

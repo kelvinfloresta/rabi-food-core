@@ -2,7 +2,9 @@ package fixtures
 
 import (
 	"net/http"
+	"rabi-food-core/domain/order"
 	"rabi-food-core/libs/database/gateways/order_gateway"
+	"rabi-food-core/libs/errs"
 	"rabi-food-core/usecases/order_case"
 	"testing"
 
@@ -62,4 +64,34 @@ func (orderFixture) GetByID(t *testing.T, id string, token string) (order_gatewa
 	require.NoError(t, err)
 
 	return found, response.StatusCode
+}
+
+func (orderFixture) ExpectFulfillmentStatus(t *testing.T, id string, expectedStatus order.FulfillmentStatus, token string) {
+	t.Helper()
+	found, httpStatus := Order.GetByID(t, id, token)
+	require.Equal(t, http.StatusOK, httpStatus)
+	require.Equal(t, expectedStatus, found.FulfillmentStatus)
+}
+
+func (orderFixture) Patch(t *testing.T, id string, input *order_gateway.PatchValues, token string) *errs.AppError {
+	t.Helper()
+	require.NotEmpty(t, id)
+
+	obj := httpexpect.Default(t, AppURL).
+		Request(http.MethodPatch, Order.URI+id).
+		WithHeader("Authorization", "Bearer "+token).
+		WithJSON(input).
+		Expect()
+
+	raw := obj.Raw()
+
+	if raw.StatusCode != http.StatusOK && raw.StatusCode != http.StatusNotFound {
+		appErr := errs.AppError{}
+		obj.JSON().Object().Decode(&appErr)
+		err := raw.Body.Close()
+		require.NoError(t, err)
+		return &appErr
+	}
+
+	return nil
 }
