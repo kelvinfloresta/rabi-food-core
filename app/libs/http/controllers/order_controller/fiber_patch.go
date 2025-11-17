@@ -3,6 +3,7 @@ package order_controller
 import (
 	"net/http"
 	"rabi-food-core/libs/database/gateways/order_gateway"
+	"rabi-food-core/libs/errs"
 	"rabi-food-core/libs/http/fiber_adapter/parser"
 	"rabi-food-core/libs/validator"
 	"rabi-food-core/usecases/order_case"
@@ -24,6 +25,12 @@ func (c *OrderController) Patch(ctx *fiber.Ctx) error {
 	err = validator.V.Struct(data)
 	if err != nil {
 		return err
+	}
+
+	if data.DeliveryStatus == "" &&
+		data.FulfillmentStatus == "" &&
+		data.PaymentStatus == "" {
+		return errs.ErrNoValuesToUpdate
 	}
 
 	updated, err := c.usecase.Patch(ctx.Context(), filter, data)

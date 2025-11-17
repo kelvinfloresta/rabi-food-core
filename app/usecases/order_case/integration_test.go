@@ -359,7 +359,7 @@ func (t *TestSuite) Test_OrderIntegration_Patch() {
 			WithHeader("Authorization", "Bearer "+backofficeToken).
 			WithJSON(Body).
 			Expect().
-			Status(http.StatusNotFound).
+			Status(http.StatusBadRequest).
 			Body().NotEmpty()
 
 		found, status := fixtures.Order.GetByID(t.T(), orderID, token)
