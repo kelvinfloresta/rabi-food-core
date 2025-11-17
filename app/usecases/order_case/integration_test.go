@@ -212,17 +212,17 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 			},
 		}
 
-		found := &errs.AppError{}
+		response := &errs.AppError{}
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.Order.URI).
 			WithHeader("Authorization", "Bearer "+token).
 			WithJSON(Body).
 			Expect().
 			Status(http.StatusNotFound).
-			JSON().Object().Decode(found)
+			JSON().Object().Decode(response)
 
 		EXPECTED_CODE := errs.ProductNotFound(productID).Code
-		t.EqualValues(EXPECTED_CODE, found.Code)
+		t.EqualValues(EXPECTED_CODE, response.Code)
 	})
 }
 
