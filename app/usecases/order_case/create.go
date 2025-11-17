@@ -29,19 +29,18 @@ func (c *OrderCase) Create(ctx context.Context, input CreateInput) (string, erro
 		productIds = append(productIds, item.ProductID)
 	}
 
-	products, err := c.productCase.List(ctx, productIds)
+	isActive := true
+	products, err := c.productCase.List(ctx, product_gateway.ListFilter{
+		IDs:      productIds,
+		IsActive: &isActive,
+	})
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch products: %w", err)
 	}
 
-	if len(products) == 0 {
-		return "", errs.ErrProductNotFound
-	}
-
 	if len(products) != len(input.Items) {
 		logger.Get(ctx).Warn().Msgf("some products not found for the given IDs: %v, found: %v", productIds, products)
-
-		return "", errs.ErrProductNotFound
+		return "", errs.ProductNotFound(productIds...)
 	}
 
 	productMap := make(map[string]product_gateway.ListOutput)
