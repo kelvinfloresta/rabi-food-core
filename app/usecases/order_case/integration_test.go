@@ -124,21 +124,25 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 	t.Run("should fail when no products are found for given IDs", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		token := fixtures.Auth.UserToken(t.T(), tenant.UserID)
+		nonExistingProductID := uuid.NewString()
 
 		Body := order_case.CreateInput{
 			Notes: "Notes",
 			Items: []order_case.OrderItem{
-				{ProductID: uuid.NewString(), Quantity: 1},
+				{ProductID: nonExistingProductID, Quantity: 1},
 			},
 		}
 
+		expectedError := errs.ProductNotFound(nonExistingProductID)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.Order.URI).
 			WithHeader("Authorization", "Bearer "+token).
 			WithJSON(Body).
 			Expect().
 			Status(http.StatusNotFound).
-			JSON().IsEqual(errs.ErrProductNotFound)
+			JSON().Object().
+			Value("code").IsEqual(expectedError.Code)
+
 	})
 
 	t.Run("should fail when some product IDs are missing in the database", func() {
@@ -147,21 +151,24 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 
 		existingProductID := fixtures.Product.Create(t.T(), nil, token)
 
+		nonExistingProductID := uuid.NewString()
 		Body := order_case.CreateInput{
 			Notes: "Notes",
 			Items: []order_case.OrderItem{
 				{ProductID: existingProductID, Quantity: 1},
-				{ProductID: uuid.NewString(), Quantity: 1}, // Non-existing product ID
+				{ProductID: nonExistingProductID, Quantity: 1},
 			},
 		}
 
+		expectedError := errs.ProductNotFound(nonExistingProductID)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.Order.URI).
 			WithHeader("Authorization", "Bearer "+token).
 			WithJSON(Body).
 			Expect().
 			Status(http.StatusNotFound).
-			JSON().IsEqual(errs.ErrProductNotFound)
+			JSON().Object().
+			Value("code").IsEqual(expectedError.Code)
 	})
 
 	t.Run("should ignore provided tenantID and use token tenant when user is not backoffice", func() {
@@ -212,17 +219,15 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 			},
 		}
 
-		response := &errs.AppError{}
+		execpectedError := errs.ProductNotFound(productID)
 		httpexpect.Default(t.T(), fixtures.AppURL).
 			Request(http.MethodPost, fixtures.Order.URI).
 			WithHeader("Authorization", "Bearer "+token).
 			WithJSON(Body).
 			Expect().
 			Status(http.StatusNotFound).
-			JSON().Object().Decode(response)
-
-		EXPECTED_CODE := errs.ProductNotFound(productID).Code
-		t.EqualValues(EXPECTED_CODE, response.Code)
+			JSON().Object().
+			Value("code").IsEqual(execpectedError.Code)
 	})
 }
 

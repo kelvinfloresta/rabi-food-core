@@ -39,8 +39,7 @@ func (c *OrderCase) Create(ctx context.Context, input CreateInput) (string, erro
 	}
 
 	if len(products) != len(input.Items) {
-		logger.Get(ctx).Warn().Msgf("some products not found for the given IDs: %v, found: %v", productIds, products)
-		return "", errs.ProductNotFound(productIds...)
+		return c.handleMissingProducts(ctx, input.Items, products)
 	}
 
 	productMap := make(map[string]product_gateway.ListOutput)
@@ -89,4 +88,22 @@ func (c *OrderCase) Create(ctx context.Context, input CreateInput) (string, erro
 	logger.L().Info().Str("tenant", session.TenantID).Str("order", id).Msg("order created")
 
 	return id, nil
+}
+
+func (c *OrderCase) handleMissingProducts(ctx context.Context, requestedItems []OrderItem, foundProducts []product_gateway.ListOutput) (string, error) {
+	foundProductIDs := make(map[string]struct{})
+	for _, product := range foundProducts {
+		foundProductIDs[product.ID] = struct{}{}
+	}
+
+	missingProductIDs := make([]string, 0)
+	for _, item := range requestedItems {
+		if _, exists := foundProductIDs[item.ProductID]; !exists {
+			missingProductIDs = append(missingProductIDs, item.ProductID)
+		}
+	}
+
+	logger.Get(ctx).Warn().Msgf("missing products: %v", missingProductIDs)
+
+	return "", errs.ProductNotFound(missingProductIDs...)
 }
