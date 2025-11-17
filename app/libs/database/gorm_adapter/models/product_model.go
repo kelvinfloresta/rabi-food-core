@@ -24,7 +24,7 @@ type Product struct {
 	Unit  string `gorm:"not null"`
 	Price uint   `gorm:"not null"`
 
-	IsActive bool `gorm:"default:true"`
+	IsActive bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
