@@ -28,7 +28,7 @@ func (c *OrderCase) Patch(
 		return false, errs.ErrForbidden
 	}
 
-	deliveryStatusIn := []order.DeliveryStatus(nil)
+	var deliveryStatusIn []order.DeliveryStatus
 	if newValues.DeliveryStatus != "" {
 		deliveryStatusIn = newValues.DeliveryStatus.GetPrerequisites()
 		if len(deliveryStatusIn) == 0 {
@@ -36,7 +36,7 @@ func (c *OrderCase) Patch(
 		}
 	}
 
-	fulfillmentStatusIn := []order.FulfillmentStatus(nil)
+	var fulfillmentStatusIn []order.FulfillmentStatus
 	if newValues.FulfillmentStatus != "" {
 		fulfillmentStatusIn = newValues.FulfillmentStatus.GetPrerequisites()
 		if len(fulfillmentStatusIn) == 0 {
@@ -44,7 +44,7 @@ func (c *OrderCase) Patch(
 		}
 	}
 
-	paymentStatusIn := []order.PaymentStatus(nil)
+	var paymentStatusIn []order.PaymentStatus
 	if newValues.PaymentStatus != "" {
 		paymentStatusIn = newValues.PaymentStatus.GetPrerequisites()
 		if len(paymentStatusIn) == 0 {
