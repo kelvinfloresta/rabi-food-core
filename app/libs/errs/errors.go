@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	ErrForbidden = newErr("forbidden", http.StatusForbidden)
+	ErrForbidden        = newErr("forbidden", http.StatusForbidden)
+	ErrNoValuesToUpdate = newErr("NO_VALUES_TO_UPDATE", http.StatusBadRequest)
 )
 
 type AppError struct {
