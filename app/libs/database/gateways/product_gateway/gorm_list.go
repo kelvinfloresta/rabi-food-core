@@ -22,6 +22,10 @@ func (g *GormProductGatewayAdapter) List(filter ListFilter) ([]ListOutput, error
 		query = query.Where("tenant_id = ?", filter.TenantID)
 	}
 
+	if filter.IsActive != nil {
+		query = query.Where("is_active = ?", filter.IsActive)
+	}
+
 	result := query.Find(&output)
 	if result.Error != nil {
 		return nil, result.Error
