@@ -6,11 +6,7 @@ import (
 	g "rabi-food-core/libs/database/gateways/product_gateway"
 )
 
-func (c *ProductCase) List(ctx context.Context, ids []string) ([]g.ListOutput, error) {
-	filter := g.ListFilter{
-		IDs: ids,
-	}
-
+func (c *ProductCase) List(ctx context.Context, filter g.ListFilter) ([]g.ListOutput, error) {
 	session := app_context.GetSession(ctx)
 	if session.Role.IsUser() {
 		filter.TenantID = session.TenantID
