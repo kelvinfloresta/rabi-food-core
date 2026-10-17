@@ -27,6 +27,7 @@
 ### Internacionalização
 - **Todo texto visível ao usuário via i18n** — sem string literal no JSX.
 - **Placeholders de formato** (ex: `(11) 99999-9999`, `00000-000`) são constantes do componente, não chaves de tradução — o formato não muda entre idiomas.
+- **Locale no servidor via middleware** (React Router 8 + remix-i18next 8): o `i18nextMiddleware` está registrado no `root.tsx`. Em loaders/actions use `getLocale(context)` e `getInstance(context)` de `~/i18n.server` — nunca crie uma instância i18next manualmente nem leia o locale direto do request.
 
 ## Comandos úteis
 ```bash

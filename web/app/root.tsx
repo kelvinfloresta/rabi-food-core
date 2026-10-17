@@ -11,11 +11,13 @@ import { useTranslation } from "react-i18next"
 import { useEffect } from "react"
 
 import type { Route } from "./+types/root"
-import i18nServer from "~/i18n.server"
+import { getLocale, i18nextMiddleware } from "~/i18n.server"
 import "./app.css"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const locale = await i18nServer.getLocale(request)
+export const middleware: Route.MiddlewareFunction[] = [i18nextMiddleware]
+
+export function loader({ context }: Route.LoaderArgs) {
+  const locale = getLocale(context)
   return { locale }
 }
 

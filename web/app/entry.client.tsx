@@ -4,7 +4,6 @@ import { StrictMode, startTransition } from "react"
 import { hydrateRoot } from "react-dom/client"
 import { I18nextProvider, initReactI18next } from "react-i18next"
 import { HydratedRouter } from "react-router/dom"
-import { getInitialNamespaces } from "remix-i18next/client"
 import i18nConfig from "~/i18n"
 
 async function main() {
@@ -13,7 +12,6 @@ async function main() {
     .use(HttpBackend)
     .init({
       ...i18nConfig,
-      ns: getInitialNamespaces(),
       backend: { loadPath: "/locales/{{lng}}/{{ns}}.json" },
       detection: { order: ["htmlTag"] },
     })
