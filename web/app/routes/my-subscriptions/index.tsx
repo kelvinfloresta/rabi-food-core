@@ -4,6 +4,7 @@ import { Package } from "lucide-react"
 import type { Route } from "./+types/index"
 import { resolveTenant } from "~/lib/tenant.server"
 import { apiClient } from "~/lib/api.server"
+import { getAccessToken } from "~/lib/session.server"
 import { Button } from "~/components/ui/button"
 import { BottomNav, BOTTOM_NAV_HEIGHT } from "~/components/bottom-nav"
 
@@ -24,20 +25,15 @@ type SubscriptionsResponse = Readonly<{
   maxPages: number
 }>
 
-function parseAuthCookie(request: Request): string | null {
-  const cookie = request.headers.get("Cookie") ?? ""
-  return cookie.match(/auth_token=([^;]+)/)?.[1] ?? null
-}
-
 function formatPrice(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const tenant = await resolveTenant(request)
   if (!tenant) throw redirect("/")
 
-  const token = parseAuthCookie(request)
+  const token = getAccessToken(context)
   if (!token) throw redirect("/")
 
   const api = apiClient(tenant.id)

@@ -29,6 +29,12 @@
 - **Placeholders de formato** (ex: `(11) 99999-9999`, `00000-000`) são constantes do componente, não chaves de tradução — o formato não muda entre idiomas.
 - **Locale no servidor via middleware** (React Router 8 + remix-i18next 8): o `i18nextMiddleware` está registrado no `root.tsx`. Em loaders/actions use `getLocale(context)` e `getInstance(context)` de `~/i18n.server` — nunca crie uma instância i18next manualmente nem leia o locale direto do request.
 
+### Autenticação
+- **Tokens nunca chegam ao navegador.** Access e refresh token vivem só em cookies `HttpOnly`; o `authMiddleware` (`~/lib/session.server`) renova o access token no servidor antes de qualquer loader/action.
+- Em loaders/actions use `getAccessToken(context)` — nunca leia o cookie manualmente, nunca receba token no body, nunca devolva token para o client.
+- Para iniciar/encerrar sessão use `createSessionHeaders(tokens)` / `destroySessionHeaders()`. O client só sabe *se* está logado (`isLoggedIn: boolean` vindo do loader).
+- Sem `localStorage`/`sessionStorage` para nada relacionado a sessão.
+
 ## Comandos úteis
 ```bash
 npm run dev        # iniciar servidor de desenvolvimento

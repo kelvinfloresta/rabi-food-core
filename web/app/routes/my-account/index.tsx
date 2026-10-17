@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import type { Route } from "./+types/index"
 import { resolveTenant } from "~/lib/tenant.server"
 import { apiClient } from "~/lib/api.server"
+import { getAccessToken } from "~/lib/session.server"
 import type { AccountProfile } from "~/components/subscription/types"
 import { Button } from "~/components/ui/button"
 import { PersonalInfoSection } from "./_components/personal-info-section"
@@ -15,19 +16,14 @@ export type AccountActionResult =
   | { intent: "save-address"; ok: true }
   | { intent: string; error: string }
 
-function parseAuthCookie(request: Request): string | null {
-  const cookie = request.headers.get("Cookie") ?? ""
-  return cookie.match(/auth_token=([^;]+)/)?.[1] ?? null
-}
-
 type SubscriptionListItem = Readonly<{ status: string }>
 type SubscriptionPaginateResponse = Readonly<{ data: readonly SubscriptionListItem[] }>
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const tenant = await resolveTenant(request)
   if (!tenant) throw redirect("/")
 
-  const token = parseAuthCookie(request)
+  const token = getAccessToken(context)
   if (!token) throw redirect("/")
 
   const api = apiClient(tenant.id)
@@ -43,19 +39,22 @@ export async function loader({ request }: Route.LoaderArgs) {
   const hasActiveSubscription =
     subscriptionsRes.ok && subscriptionsRes.data.data.some((s) => s.status === "active")
 
-  return { profile, hasActiveSubscription, token }
+  return { profile, hasActiveSubscription }
 }
 
-export async function action({ request }: Route.ActionArgs): Promise<AccountActionResult | Response> {
+export async function action({ request, context }: Route.ActionArgs): Promise<AccountActionResult | Response> {
   const tenant = await resolveTenant(request)
   if (!tenant) return { intent: "unknown", error: "UNKNOWN" }
+
+  const token = getAccessToken(context)
+  if (!token) throw redirect("/")
 
   const api = apiClient(tenant.id)
   const body = await request.json()
   const intent = body.intent as string
 
   if (intent === "save-personal-info") {
-    const result = await api.patch("/user/me", { name: body.name, phone: body.phone }, body.token)
+    const result = await api.patch("/user/me", { name: body.name, phone: body.phone }, token)
     if (!result.ok) return { intent: "save-personal-info", error: result.code }
     return { intent: "save-personal-info", ok: true }
   }
@@ -71,7 +70,7 @@ export async function action({ request }: Route.ActionArgs): Promise<AccountActi
         state: body.state,
         zip: body.zip,
       },
-      body.token
+      token
     )
     if (!result.ok) return { intent: "save-address", error: result.code }
     return { intent: "save-address", ok: true }
@@ -81,7 +80,7 @@ export async function action({ request }: Route.ActionArgs): Promise<AccountActi
 }
 
 export default function MyAccount() {
-  const { profile, hasActiveSubscription, token } = useLoaderData<typeof loader>()
+  const { profile, hasActiveSubscription } = useLoaderData<typeof loader>()
   const { t } = useTranslation()
 
   return (
@@ -90,11 +89,10 @@ export default function MyAccount() {
         <h1 className="text-xl font-semibold">{t("account.title")}</h1>
       </header>
       <main className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-        <PersonalInfoSection profile={profile} token={token} />
+        <PersonalInfoSection profile={profile} />
         <AccessSection email={profile.email} />
         <AddressSection
           profile={profile}
-          token={token}
           hasActiveSubscription={hasActiveSubscription}
         />
         <Form method="post" action="/sign-out">

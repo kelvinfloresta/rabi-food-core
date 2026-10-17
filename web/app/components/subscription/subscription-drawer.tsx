@@ -7,7 +7,6 @@ import { Elements } from "@stripe/react-stripe-js"
 import { useTranslation } from "react-i18next"
 import { Sheet, SheetContent } from "~/components/ui/sheet"
 import { cn } from "~/lib/utils"
-import { isTokenExpired, getStoredRefreshToken, storeRefreshToken, clearRefreshToken } from "~/lib/token"
 import { useWizard } from "./use-wizard"
 import { StepProducts } from "./step-products"
 import { StepBasket } from "./step-basket"
@@ -22,9 +21,7 @@ import { calculatePricing } from "./pricing"
 
 type OtpActionResult =
   | { intent: "send-otp"; ok: true }
-  | { intent: "verify-otp"; ok: true; accessToken: string; refreshToken: string }
-  | { intent: "refresh"; ok: true; accessToken: string; refreshToken: string }
-  | { intent: "refresh"; ok: false }
+  | { intent: "verify-otp"; ok: true }
   | { intent: "get-profile"; ok: true; profile: UserProfile }
   | { intent: "get-payment-profile"; ok: true; hasPaymentMethod: boolean; card?: SavedCard }
   | { intent: "save-address"; ok: true }
@@ -48,19 +45,25 @@ const STEP_LABELS = {
 
 const NUMERIC_STEPS = [1, 2, 3, 4, 5, 6] as const
 
+// Returned by the /subscribe action when the session expired and could not be renewed server-side
+const UNAUTHENTICATED = "UNAUTHENTICATED"
+
+function isUnauthenticated(result: unknown): boolean {
+  return typeof result === "object" && result !== null && "error" in result && result.error === UNAUTHENTICATED
+}
+
 type Props = {
   readonly open: boolean
   readonly onClose: () => void
   readonly initialProductId?: string | null
   readonly products: readonly Product[]
   readonly config: SubscriptionConfig | null
-  readonly serverToken: string | null
+  readonly isLoggedIn: boolean
   readonly stripePublishableKey: string
 }
 
-export default function SubscriptionDrawer({ open, onClose, initialProductId, products, config, serverToken, stripePublishableKey }: Props) {
+export default function SubscriptionDrawer({ open, onClose, initialProductId, products, config, isLoggedIn: initialIsLoggedIn, stripePublishableKey }: Props) {
   const { t } = useTranslation()
-  const loaderToken = serverToken
 
   const otpFetcher = useFetcher<OtpActionResult>()
   const addressFetcher = useFetcher<OtpActionResult>()
@@ -78,7 +81,7 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | undefined>(undefined)
   const [threeDSClientSecret, setThreeDSClientSecret] = useState<string | null>(null)
-  const refreshInProgressRef = useRef(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(initialIsLoggedIn)
 
   const stripePromise = useMemo(
     () => (stripePublishableKey ? loadStripe(stripePublishableKey) : null),
@@ -97,9 +100,8 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
   }, [open, initialProductId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!loaderToken || data.user.token) return
-    setData({ user: { ...data.user, token: loaderToken } })
-  }, [loaderToken]) // eslint-disable-line react-hooks/exhaustive-deps
+    setIsLoggedIn(initialIsLoggedIn)
+  }, [initialIsLoggedIn])
 
   useEffect(() => {
     if (open) return
@@ -115,36 +117,13 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!open || data.user.token || loaderToken) return
-    const storedRefresh = getStoredRefreshToken()
-    if (!storedRefresh) return
-
-    fetch("/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent: "refresh", refreshToken: storedRefresh }),
-    })
-      .then((res) => res.json())
-      .then((result: { intent: "refresh"; ok: boolean; accessToken?: string; refreshToken?: string }) => {
-        if (result.ok && result.accessToken && result.refreshToken) {
-          storeRefreshToken(result.refreshToken)
-          setData({ user: { ...data.user, token: result.accessToken } })
-        } else {
-          clearRefreshToken()
-        }
-      })
-      .catch(() => clearRefreshToken())
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
     if (!otpFetcher.data || !("ok" in otpFetcher.data)) return
     if (otpFetcher.data.intent === "send-otp") {
       setOtpSubStep("code")
     }
-    if (otpFetcher.data.intent === "verify-otp" && "accessToken" in otpFetcher.data) {
-      storeRefreshToken(otpFetcher.data.refreshToken)
+    if (otpFetcher.data.intent === "verify-otp") {
       setForcedUserMode(undefined)
-      setData({ user: { ...data.user, token: otpFetcher.data.accessToken } })
+      setIsLoggedIn(true)
       setStep(6)
     }
   }, [otpFetcher.data]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -156,13 +135,10 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
       return
     }
     prevStep6.current = true
-    ensureToken().then((token) => {
-      if (!token) return
-      profileFetcher.submit(
-        { intent: "get-profile", token },
-        { method: "post", action: "/subscribe", encType: "application/json" },
-      )
-    })
+    profileFetcher.submit(
+      { intent: "get-profile" },
+      { method: "post", action: "/subscribe", encType: "application/json" },
+    )
   }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const existingProfile =
@@ -192,13 +168,10 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
       addressFetcher.data.intent === "save-address"
     ) {
       setStep("summary")
-      ensureToken().then((token) => {
-        if (!token) return
-        paymentProfileFetcher.submit(
-          { intent: "get-payment-profile", token },
-          { method: "post", action: "/subscribe", encType: "application/json" },
-        )
-      })
+      paymentProfileFetcher.submit(
+        { intent: "get-payment-profile" },
+        { method: "post", action: "/subscribe", encType: "application/json" },
+      )
     }
   }, [addressFetcher.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -258,43 +231,19 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
       })
   }, [threeDSClientSecret, stripePromise]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function ensureToken(): Promise<string | null> {
-    const { token } = data.user
-    if (!token) return null
-    if (!isTokenExpired(token)) return token
-    if (refreshInProgressRef.current) return null
-
-    refreshInProgressRef.current = true
-    try {
-      const refreshToken = getStoredRefreshToken()
-      if (!refreshToken) {
-        setForcedUserMode("existing")
-        setOtpSubStep("identity")
-        setStep(5)
-        return null
-      }
-
-      const res = await fetch("/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intent: "refresh", refreshToken }),
-      })
-      const result = await res.json() as { intent: "refresh"; ok: boolean; accessToken?: string; refreshToken?: string }
-      if (result.ok && result.accessToken && result.refreshToken) {
-        storeRefreshToken(result.refreshToken)
-        setData({ user: { ...data.user, token: result.accessToken } })
-        return result.accessToken
-      }
-
-      clearRefreshToken()
-      setForcedUserMode("existing")
-      setOtpSubStep("identity")
-      setStep(5)
-      return null
-    } finally {
-      refreshInProgressRef.current = false
-    }
+  function requireSignIn() {
+    setIsLoggedIn(false)
+    setCheckoutError(undefined)
+    setForcedUserMode("existing")
+    setOtpSubStep("identity")
+    setStep(5)
   }
+
+  useEffect(() => {
+    const results = [profileFetcher.data, addressFetcher.data, paymentProfileFetcher.data, checkoutFetcher.data]
+    if (!results.some(isUnauthenticated)) return
+    requireSignIn()
+  }, [profileFetcher.data, addressFetcher.data, paymentProfileFetcher.data, checkoutFetcher.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSendOtp(name: string, email: string, phone: string) {
     otpFetcher.submit(
@@ -310,19 +259,14 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
     )
   }
 
-  async function handleSaveAddress() {
-    const token = await ensureToken()
-    if (!token) return
+  function handleSaveAddress() {
     addressFetcher.submit(
-      { intent: "save-address", token, phone: data.user.phone, ...data.address },
+      { intent: "save-address", phone: data.user.phone, ...data.address },
       { method: "post", action: "/subscribe", encType: "application/json" },
     )
   }
 
-  async function handleCheckout(paymentMethodId?: string) {
-    const token = await ensureToken()
-    if (!token) return
-
+  function handleCheckout(paymentMethodId?: string) {
     setCheckoutError(undefined)
 
     const cartSnapshot = JSON.stringify({ items: data.items, deliveryDays: data.deliveryDays, totalCycles: data.totalCycles })
@@ -339,7 +283,6 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
         items: data.items,
         deliveryDays: data.deliveryDays,
         totalCycles: data.totalCycles,
-        user: { ...data.user, token },
       // useFetcher.submit requires Record<string, string> but we need nested objects for JSON — cast is safe here
       } as unknown as Record<string, string>,
       { method: "post", action: "/subscribe", encType: "application/json" },
@@ -476,10 +419,7 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
                   deliveryWeekdays={data.deliveryDays.map((d) => d.weekday)}
                   cycleDiscountRules={config?.discountRules ?? []}
                   onChange={(totalCycles) => setData({ totalCycles })}
-                  onNext={async () => {
-                    const token = await ensureToken()
-                    setStep(token ? 6 : 5)
-                  }}
+                  onNext={() => setStep(isLoggedIn ? 6 : 5)}
                 />
               )}
 
@@ -489,7 +429,7 @@ export default function SubscriptionDrawer({ open, onClose, initialProductId, pr
                   subStep={otpSubStep}
                   initialMode={forcedUserMode}
                   existingIdentity={data.user.name || data.user.email || undefined}
-                  onContinueAsExisting={data.user.token ? () => setStep(6) : undefined}
+                  onContinueAsExisting={isLoggedIn ? () => setStep(6) : undefined}
                   onChange={(user) => setData({ user })}
                   onSendOtp={handleSendOtp}
                   onVerifyOtp={handleVerifyOtp}

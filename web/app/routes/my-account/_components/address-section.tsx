@@ -9,7 +9,6 @@ import type { AccountActionResult } from "../index"
 
 type AddressSectionProps = Readonly<{
   profile: AccountProfile
-  token: string
   hasActiveSubscription: boolean
 }>
 
@@ -27,7 +26,7 @@ type MutableAddressErrors = Partial<Record<keyof AddressFields, string>>
 
 const ZIP_PLACEHOLDER = "00000-000"
 
-export function AddressSection({ profile, token, hasActiveSubscription }: AddressSectionProps) {
+export function AddressSection({ profile, hasActiveSubscription }: AddressSectionProps) {
   const { t } = useTranslation()
   const fetcher = useFetcher<AccountActionResult>()
   const [editing, setEditing] = useState(false)
@@ -80,7 +79,7 @@ export function AddressSection({ profile, token, hasActiveSubscription }: Addres
   function handleSave() {
     if (!validate()) return
     fetcher.submit(
-      { intent: "save-address", ...fields, token },
+      { intent: "save-address", ...fields },
       { method: "POST", encType: "application/json" }
     )
     setEditing(false)

@@ -6,7 +6,7 @@ export type WizardData = {
   items: { productId: string; quantity: number }[]
   deliveryDays: { weekday: number; startHour: number; endHour: number }[]
   totalCycles: number
-  user: { name: string; email: string; phone: string; token: string }
+  user: { name: string; email: string; phone: string }
   address: {
     street: string
     complement: string
@@ -21,7 +21,7 @@ const defaultData: WizardData = {
   items: [],
   deliveryDays: [],
   totalCycles: 1,
-  user: { name: "", email: "", phone: "", token: "" },
+  user: { name: "", email: "", phone: "" },
   address: { street: "", complement: "", neighborhood: "", city: "", state: "", zip: "" },
 }
 

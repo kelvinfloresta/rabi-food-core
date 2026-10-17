@@ -10,7 +10,6 @@ import type { AccountActionResult } from "../index"
 
 type PersonalInfoSectionProps = Readonly<{
   profile: AccountProfile
-  token: string
 }>
 
 type PersonalInfoErrors = Readonly<{
@@ -25,7 +24,7 @@ type MutablePersonalInfoErrors = {
 
 const PHONE_PLACEHOLDER = "+55 (11) 99999-9999"
 
-export function PersonalInfoSection({ profile, token }: PersonalInfoSectionProps) {
+export function PersonalInfoSection({ profile }: PersonalInfoSectionProps) {
   const { t } = useTranslation()
   const fetcher = useFetcher<AccountActionResult>()
   const [editing, setEditing] = useState(false)
@@ -58,7 +57,7 @@ export function PersonalInfoSection({ profile, token }: PersonalInfoSectionProps
   function handleSave() {
     if (!validate()) return
     fetcher.submit(
-      { intent: "save-personal-info", name: nameValue, phone: phoneValue, token },
+      { intent: "save-personal-info", name: nameValue, phone: phoneValue },
       { method: "POST", encType: "application/json" }
     )
     setEditing(false)

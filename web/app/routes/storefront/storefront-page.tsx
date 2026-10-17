@@ -1,9 +1,9 @@
 import { useLoaderData, useRouteLoaderData, Link } from "react-router"
 import { useEffect, useRef, useState } from "react"
-import { getStoredRefreshToken } from "~/lib/token"
 import type { Route } from "./+types/storefront-page"
 import { resolveTenant } from "~/lib/tenant.server"
 import { apiClient } from "~/lib/api.server"
+import { getAccessToken } from "~/lib/session.server"
 import type { SubscriptionConfig, AccountProfile } from "~/components/subscription/types"
 import { CategoryBar } from "~/components/storefront/category-bar"
 import { useScrollSpy } from "~/components/storefront/use-scroll-spy"
@@ -30,17 +30,12 @@ type CatalogResponse = {
   readonly categories: readonly Category[]
 }
 
-function parseAuthCookie(request: Request): string | null {
-  const cookie = request.headers.get("Cookie") ?? ""
-  return cookie.match(/auth_token=([^;]+)/)?.[1] ?? null
-}
-
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const tenant = await resolveTenant(request)
-  if (!tenant) return { tenant: null, categories: [] as Category[], products: [] as Product[], config: null, serverToken: null }
+  if (!tenant) return { tenant: null, categories: [] as Category[], products: [] as Product[], config: null, isLoggedIn: false }
 
   const api = apiClient(tenant.id)
-  const token = parseAuthCookie(request)
+  const token = getAccessToken(context)
 
   const [catalogRes, configRes, profileRes] = await Promise.all([
     api.get<CatalogResponse>("/product/catalog"),
@@ -53,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     products: catalogRes.ok ? catalogRes.data.products : [],
     categories: catalogRes.ok ? catalogRes.data.categories : [],
     config: configRes.ok ? configRes.data : null,
-    serverToken: token,
+    isLoggedIn: token !== null,
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
     userName: profileRes?.ok ? (profileRes.data.name ?? null) : null,
   }
@@ -64,11 +59,10 @@ function formatPrice(cents: number): string {
 }
 
 export default function StorefrontHome() {
-  const { tenant, categories, products, config, serverToken, stripePublishableKey } = useLoaderData<typeof loader>()
+  const { tenant, categories, products, config, isLoggedIn, stripePublishableKey } = useLoaderData<typeof loader>()
   if (!tenant) return <InstitutionalPage />
 
   const layout = useRouteLoaderData("routes/storefront/layout") as { tenant: { name: string } }
-  const [isLoggedIn, setIsLoggedIn] = useState(!!serverToken)
   const [bottomPadding, setBottomPadding] = useState(0)
   const [detailProduct, setDetailProduct] = useState<Product | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -87,10 +81,6 @@ export default function StorefrontHome() {
     category: cat,
     products: products.filter((p) => p.categoryId === cat.id),
   }))
-
-  useEffect(() => {
-    if (!serverToken) setIsLoggedIn(!!getStoredRefreshToken())
-  }, [serverToken])
 
   useEffect(() => {
     function calculate() {
@@ -216,7 +206,7 @@ export default function StorefrontHome() {
         initialProductId={drawerInitialProductId}
         products={products}
         config={config}
-        serverToken={serverToken}
+        isLoggedIn={isLoggedIn}
         stripePublishableKey={stripePublishableKey}
       />
 

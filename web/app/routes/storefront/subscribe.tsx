@@ -1,14 +1,14 @@
+import { data } from "react-router"
 import type { Route } from "./+types/subscribe"
 import { resolveTenant } from "~/lib/tenant.server"
 import { apiClient } from "~/lib/api.server"
+import { createSessionHeaders, getAccessToken, type TokenPair } from "~/lib/session.server"
 import type { WizardData } from "~/components/subscription/use-wizard"
 import type { Product, SubscriptionConfig, UserProfile } from "~/components/subscription/types"
 
 type OtpActionResult =
   | { intent: "send-otp"; ok: true }
-  | { intent: "verify-otp"; ok: true; accessToken: string; refreshToken: string }
-  | { intent: "refresh"; ok: true; accessToken: string; refreshToken: string }
-  | { intent: "refresh"; ok: false }
+  | { intent: "verify-otp"; ok: true }
   | { intent: "get-profile"; ok: true; profile: UserProfile }
   | { intent: "get-payment-profile"; ok: true; hasPaymentMethod: boolean; card?: { brand: string; last4: string; expMonth: number; expYear: number } }
   | { intent: "save-address"; ok: true }
@@ -19,17 +19,16 @@ type SubscribeAndChargeResult =
   | { ok: true; requiresAction: true; clientSecret: string }
   | { error: string }
 
-function parseAuthCookie(request: Request): string | null {
-  const cookie = request.headers.get("Cookie") ?? ""
-  return cookie.match(/auth_token=([^;]+)/)?.[1] ?? null
-}
+type SessionActionResult = ReturnType<typeof data<OtpActionResult>>
 
-export async function loader({ request }: Route.LoaderArgs) {
+const UNAUTHENTICATED = "UNAUTHENTICATED"
+
+export async function loader({ request, context }: Route.LoaderArgs) {
   const tenant = await resolveTenant(request)
   if (!tenant) throw new Response("Not found", { status: 404 })
 
   const api = apiClient(tenant.id)
-  const token = parseAuthCookie(request)
+  const token = getAccessToken(context)
 
   const [productsRes, configRes, profileRes] = await Promise.all([
     api.get<{ data: readonly Product[] }>("/product/", { isActive: "1" }),
@@ -43,12 +42,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     products: productsRes.data.data,
     config: configRes.data,
-    token,
+    isAuthenticated: token !== null,
     profile: profileRes?.ok ? profileRes.data : null,
   }
 }
 
-export async function action({ request }: Route.ActionArgs): Promise<OtpActionResult | SubscribeAndChargeResult | Response> {
+export async function action({ request, context }: Route.ActionArgs): Promise<OtpActionResult | SubscribeAndChargeResult | SessionActionResult> {
   const tenant = await resolveTenant(request)
   if (!tenant) return { intent: "unknown", error: "UNKNOWN" }
 
@@ -63,36 +62,19 @@ export async function action({ request }: Route.ActionArgs): Promise<OtpActionRe
   }
 
   if (intent === "verify-otp") {
-    const result = await api.post<{ accessToken: string; refreshToken: string }>("/auth/otp/verify", {
+    const result = await api.post<TokenPair>("/auth/otp/verify", {
       email: body.email,
       code: body.code,
     })
     if (!result.ok) return { intent: "verify-otp", error: result.code }
-    const payload: OtpActionResult = { intent: "verify-otp", ok: true, accessToken: result.data.accessToken, refreshToken: result.data.refreshToken }
-    return new Response(JSON.stringify(payload), {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": `auth_token=${result.data.accessToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600`,
-      },
-    })
+    return data<OtpActionResult>({ intent: "verify-otp", ok: true }, { headers: await createSessionHeaders(result.data) })
   }
 
-  if (intent === "refresh") {
-    const result = await api.post<{ accessToken: string; refreshToken: string }>("/auth/refresh", {
-      refreshToken: body.refreshToken,
-    })
-    if (!result.ok) return { intent: "refresh", ok: false }
-    const refreshPayload: OtpActionResult = { intent: "refresh", ok: true, accessToken: result.data.accessToken, refreshToken: result.data.refreshToken }
-    return new Response(JSON.stringify(refreshPayload), {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": `auth_token=${result.data.accessToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600`,
-      },
-    })
-  }
+  const token = getAccessToken(context)
+  if (!token) return { intent: intent ?? "unknown", error: UNAUTHENTICATED }
 
   if (intent === "get-profile") {
-    const result = await api.get<UserProfile>("/user/me", undefined, body.token)
+    const result = await api.get<UserProfile>("/user/me", undefined, token)
     const profile = result.ok
       ? result.data
       : { street: "", complement: "", neighborhood: "", city: "", state: "", zip: "", phone: "" }
@@ -100,7 +82,7 @@ export async function action({ request }: Route.ActionArgs): Promise<OtpActionRe
   }
 
   if (intent === "get-payment-profile") {
-    const result = await api.get<{ hasPaymentMethod: boolean; card?: { brand: string; last4: string; expMonth: number; expYear: number } }>("/payment/profile", undefined, body.token)
+    const result = await api.get<{ hasPaymentMethod: boolean; card?: { brand: string; last4: string; expMonth: number; expYear: number } }>("/payment/profile", undefined, token)
     return { intent: "get-payment-profile", ok: true, hasPaymentMethod: result.ok ? result.data.hasPaymentMethod : false, card: result.ok ? result.data.card : undefined }
   }
 
@@ -113,30 +95,30 @@ export async function action({ request }: Route.ActionArgs): Promise<OtpActionRe
       city: body.city,
       state: body.state,
       zip: body.zip,
-    }, body.token)
+    }, token)
     if (!result.ok) return { intent: "save-address", error: result.code }
     return { intent: "save-address", ok: true }
   }
 
   // intent === "subscribe-and-charge"
-  const data = body as WizardData & { checkoutKey: string; paymentToken?: string }
+  const checkout = body as WizardData & { checkoutKey: string; paymentToken?: string }
 
   const subResult = await api.post<readonly string[]>("/subscription/", {
-    checkoutKey: data.checkoutKey,
-    items: data.items,
-    deliveryDays: data.deliveryDays,
-    totalCycles: data.totalCycles,
-  }, data.user.token)
+    checkoutKey: checkout.checkoutKey,
+    items: checkout.items,
+    deliveryDays: checkout.deliveryDays,
+    totalCycles: checkout.totalCycles,
+  }, token)
 
   if (!subResult.ok) return { error: subResult.code }
 
-  const paymentToken = data.paymentToken ?? ""
+  const paymentToken = checkout.paymentToken ?? ""
 
   for (const subscriptionId of subResult.data) {
     const chargeResult = await api.post<{ requiresAction?: boolean; clientSecret?: string } | null>(
       "/payment/charge",
       { subscriptionId, paymentToken },
-      data.user.token,
+      token,
     )
     if (!chargeResult.ok) return { error: chargeResult.code }
     if (chargeResult.data?.requiresAction && chargeResult.data?.clientSecret) {

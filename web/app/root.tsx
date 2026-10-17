@@ -12,9 +12,10 @@ import { useEffect } from "react"
 
 import type { Route } from "./+types/root"
 import { getLocale, i18nextMiddleware } from "~/i18n.server"
+import { authMiddleware } from "~/lib/session.server"
 import "./app.css"
 
-export const middleware: Route.MiddlewareFunction[] = [i18nextMiddleware]
+export const middleware: Route.MiddlewareFunction[] = [i18nextMiddleware, authMiddleware]
 
 export function loader({ context }: Route.LoaderArgs) {
   const locale = getLocale(context)

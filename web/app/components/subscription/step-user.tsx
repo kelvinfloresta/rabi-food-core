@@ -9,7 +9,6 @@ type UserData = {
   readonly name: string
   readonly email: string
   readonly phone: string
-  readonly token: string
 }
 
 type AccountMode = "new" | "existing"
