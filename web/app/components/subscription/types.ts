@@ -8,6 +8,12 @@ export type UserProfile = {
   readonly phone: string
 }
 
+export type AccountProfile = UserProfile & {
+  readonly name?: string
+  readonly email?: string
+  readonly taxId?: string
+}
+
 export type ProductDiscountRule = { quantityThreshold: number; discount: number }
 export type CycleDiscountRule = { cyclesThreshold: number; discount: number }
 

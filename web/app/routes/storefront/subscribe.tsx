@@ -82,7 +82,13 @@ export async function action({ request }: Route.ActionArgs): Promise<OtpActionRe
       refreshToken: body.refreshToken,
     })
     if (!result.ok) return { intent: "refresh", ok: false }
-    return { intent: "refresh", ok: true, accessToken: result.data.accessToken, refreshToken: result.data.refreshToken }
+    const refreshPayload: OtpActionResult = { intent: "refresh", ok: true, accessToken: result.data.accessToken, refreshToken: result.data.refreshToken }
+    return new Response(JSON.stringify(refreshPayload), {
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": `auth_token=${result.data.accessToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600`,
+      },
+    })
   }
 
   if (intent === "get-profile") {

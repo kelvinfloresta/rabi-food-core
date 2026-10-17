@@ -167,6 +167,68 @@
       "confirm": "Confirm subscription"
     }
   },
+  "nav": {
+    "storefront": "Store",
+    "subscriptions": "Subscriptions",
+    "account": "My Account"
+  },
+  "subscriptions": {
+    "title": "My Subscriptions",
+    "empty": "You don't have any subscriptions yet.",
+    "perDelivery": "per delivery",
+    "cancelRenewal": "Cancel renewal",
+    "remainingCycles": "{{remaining}} of {{total}} deliveries",
+    "status": {
+      "active": "Active",
+      "cancelled": "Cancelled",
+      "unknown": "Ended"
+    }
+  },
+  "account": {
+    "title": "My account",
+    "userMenu": {
+      "myAccount": "My account",
+      "signOut": "Sign out"
+    },
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "sections": {
+      "personalInfo": {
+        "title": "Personal information",
+        "name": "Full name",
+        "taxId": "Tax ID",
+        "phone": "Phone / WhatsApp",
+        "nameRequired": "Name is required",
+        "phoneInvalid": "Invalid phone number"
+      },
+      "access": {
+        "title": "Access",
+        "email": "E-mail",
+        "emailReadOnlyHint": "E-mail cannot be changed.",
+        "changePassword": "Change password"
+      },
+      "address": {
+        "title": "Delivery address",
+        "street": "Street and number",
+        "complement": "Complement",
+        "neighborhood": "Neighborhood",
+        "city": "City",
+        "state": "State",
+        "zip": "ZIP code",
+        "streetRequired": "Street is required",
+        "neighborhoodRequired": "Neighborhood is required",
+        "cityRequired": "City is required",
+        "stateRequired": "State is required",
+        "zipRequired": "ZIP code is required",
+        "activeSubscriptionWarning": "You have an active subscription. Make sure the new address is within the delivery area."
+      }
+    },
+    "saveSuccess": "Changes saved.",
+    "saveError": "Could not save. Please try again.",
+    "signOut": "Sign out"
+  },
   "payment": {
     "title": "Payment",
     "cardLabel": "Card details",

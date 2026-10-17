@@ -1,13 +1,15 @@
 import { useLoaderData, useRouteLoaderData, Link } from "react-router"
 import { useEffect, useRef, useState } from "react"
+import { getStoredRefreshToken } from "~/lib/token"
 import type { Route } from "./+types/storefront-page"
 import { resolveTenant } from "~/lib/tenant.server"
 import { apiClient } from "~/lib/api.server"
-import type { SubscriptionConfig } from "~/components/subscription/types"
+import type { SubscriptionConfig, AccountProfile } from "~/components/subscription/types"
 import { CategoryBar } from "~/components/storefront/category-bar"
 import { useScrollSpy } from "~/components/storefront/use-scroll-spy"
 import { ProductSheet } from "~/components/subscription/product-sheet"
 import SubscriptionDrawer from "~/components/subscription/subscription-drawer"
+import { BottomNav, BOTTOM_NAV_HEIGHT } from "~/components/bottom-nav"
 import InstitutionalPage from "./institutional-page"
 
 type Product = {
@@ -40,9 +42,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   const api = apiClient(tenant.id)
   const token = parseAuthCookie(request)
 
-  const [catalogRes, configRes] = await Promise.all([
+  const [catalogRes, configRes, profileRes] = await Promise.all([
     api.get<CatalogResponse>("/product/catalog"),
     api.get<SubscriptionConfig>("/subscription/config"),
+    token ? api.get<AccountProfile>("/user/me", undefined, token) : Promise.resolve(null),
   ])
 
   return {
@@ -52,6 +55,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     config: configRes.ok ? configRes.data : null,
     serverToken: token,
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
+    userName: profileRes?.ok ? (profileRes.data.name ?? null) : null,
   }
 }
 
@@ -64,6 +68,7 @@ export default function StorefrontHome() {
   if (!tenant) return <InstitutionalPage />
 
   const layout = useRouteLoaderData("routes/storefront/layout") as { tenant: { name: string } }
+  const [isLoggedIn, setIsLoggedIn] = useState(!!serverToken)
   const [bottomPadding, setBottomPadding] = useState(0)
   const [detailProduct, setDetailProduct] = useState<Product | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -84,6 +89,10 @@ export default function StorefrontHome() {
   }))
 
   useEffect(() => {
+    if (!serverToken) setIsLoggedIn(!!getStoredRefreshToken())
+  }, [serverToken])
+
+  useEffect(() => {
     function calculate() {
       const main = mainRef.current
       const firstTitle = firstTitleRef.current
@@ -94,7 +103,8 @@ export default function StorefrontHome() {
       const lastSection = sections[sections.length - 1]
       if (!lastSection) return
 
-      const available = window.innerHeight - offset - gap
+      const navHeight = isLoggedIn ? BOTTOM_NAV_HEIGHT : 0
+      const available = window.innerHeight - offset - gap - navHeight
       const lastHeight = lastSection.getBoundingClientRect().height
       setBottomPadding(Math.max(0, available - lastHeight))
     }
@@ -102,7 +112,7 @@ export default function StorefrontHome() {
     calculate()
     window.addEventListener("resize", calculate)
     return () => window.removeEventListener("resize", calculate)
-  }, [offset, productsByCategory])
+  }, [offset, productsByCategory, isLoggedIn])
 
   function subscribeProduct(productId: string) {
     setDrawerInitialProductId(productId)
@@ -209,6 +219,8 @@ export default function StorefrontHome() {
         serverToken={serverToken}
         stripePublishableKey={stripePublishableKey}
       />
+
+      {isLoggedIn && <BottomNav />}
     </div>
   )
 }

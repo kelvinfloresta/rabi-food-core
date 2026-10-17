@@ -167,6 +167,68 @@
       "confirm": "Confirmar assinatura"
     }
   },
+  "nav": {
+    "storefront": "Vitrine",
+    "subscriptions": "Assinaturas",
+    "account": "Minha Conta"
+  },
+  "subscriptions": {
+    "title": "Minhas Assinaturas",
+    "empty": "Você ainda não tem assinaturas.",
+    "perDelivery": "por entrega",
+    "cancelRenewal": "Cancelar renovação",
+    "remainingCycles": "{{remaining}} de {{total}} entregas",
+    "status": {
+      "active": "Ativa",
+      "cancelled": "Cancelada",
+      "unknown": "Encerrada"
+    }
+  },
+  "account": {
+    "title": "Minha conta",
+    "userMenu": {
+      "myAccount": "Minha conta",
+      "signOut": "Sair"
+    },
+    "edit": "Editar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "sections": {
+      "personalInfo": {
+        "title": "Dados pessoais",
+        "name": "Nome completo",
+        "taxId": "CPF",
+        "phone": "Telefone / WhatsApp",
+        "nameRequired": "Nome obrigatório",
+        "phoneInvalid": "Telefone inválido"
+      },
+      "access": {
+        "title": "Acesso",
+        "email": "E-mail",
+        "emailReadOnlyHint": "O e-mail não pode ser alterado.",
+        "changePassword": "Alterar senha"
+      },
+      "address": {
+        "title": "Endereço de entrega",
+        "street": "Rua e número",
+        "complement": "Complemento",
+        "neighborhood": "Bairro",
+        "city": "Cidade",
+        "state": "Estado",
+        "zip": "CEP",
+        "streetRequired": "Rua obrigatória",
+        "neighborhoodRequired": "Bairro obrigatório",
+        "cityRequired": "Cidade obrigatória",
+        "stateRequired": "Estado obrigatório",
+        "zipRequired": "CEP obrigatório",
+        "activeSubscriptionWarning": "Você tem uma assinatura ativa. Confirme se o novo endereço está dentro da área de entrega."
+      }
+    },
+    "saveSuccess": "Dados salvos com sucesso.",
+    "saveError": "Não foi possível salvar. Tente novamente.",
+    "signOut": "Sair"
+  },
   "payment": {
     "title": "Pagamento",
     "cardLabel": "Dados do cartão",
