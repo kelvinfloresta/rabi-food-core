@@ -62,7 +62,7 @@ rabi-food-core/
 ### Running locally
 
 ```bash
-# Start Postgres + GoTrue + pgAdmin
+# Start Postgres + GoTrue + pgAdmin + Mailpit
 task db
 
 # Run pending migrations and seed
@@ -86,7 +86,10 @@ task test
 | API Docs (Swagger) | http://localhost:3000/docs |
 | GoTrue (auth) | http://localhost:9999 |
 | pgAdmin | http://localhost:5050 |
+| Mailpit (test inbox) | http://localhost:8025 |
 | Web | http://app.localhost:5173 |
+
+Every email sent locally by GoTrue (sign-in OTP codes included) is captured by Mailpit, regardless of the recipient address — open the test inbox to read them.
 
 ## Commands
 
@@ -94,7 +97,7 @@ task test
 |---------|-------------|
 | `task dev` | Start development environment |
 | `task web` | Start web development server |
-| `task db` | Start Postgres + GoTrue + pgAdmin (Docker) |
+| `task db` | Start Postgres + GoTrue + pgAdmin + Mailpit (Docker) |
 | `task db-down` | Stop and remove containers |
 | `task test` | Run integration tests in Docker |
 | `task migrate` | Run pending migrations |
