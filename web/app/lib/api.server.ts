@@ -42,9 +42,12 @@ async function request<T>(config: AxiosRequestConfig): Promise<Result<T>> {
 }
 
 export function apiClient(tenantId?: string) {
-  const baseHeaders = {
+  const baseHeaders: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
+  }
+
+  if (tenantId !== null && tenantId !== undefined && tenantId !== "") {
+    baseHeaders["X-Tenant-ID"] = tenantId
   }
 
   return {
