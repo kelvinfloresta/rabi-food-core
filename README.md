@@ -78,6 +78,8 @@ task dev
 task test
 ```
 
+Integration tests only need Docker running. Each test package uses [testcontainers-go](https://golang.testcontainers.org/) to start its own Postgres and GoTrue, applies the migrations and runs the API on a free port — no `task db`, no `.env.test` and no shared state with your local development database. Packages run in parallel, and CI runs exactly the same command.
+
 ## Local services
 
 | Service | URL |
@@ -99,14 +101,13 @@ Every email sent locally by GoTrue (sign-in OTP codes included) is captured by M
 | `task web` | Start web development server |
 | `task db` | Start Postgres + GoTrue + pgAdmin + Mailpit (Docker) |
 | `task db-down` | Stop and remove containers |
-| `task test` | Run integration tests in Docker |
+| `task test` | Run integration tests (testcontainers; only Docker required) |
 | `task migrate` | Run pending migrations |
 | `task migrate-status` | Show migration status |
 | `task migrate-down` | Rollback last migration |
 | `task lint` | Run golangci-lint |
 | `task docs` | Generate Swagger docs |
 | `task mockgen` | Generate mocks |
-| `task logs` | Tail API container logs |
 | `task clean_docker` | Prune all Docker resources |
 
 ## Deployment

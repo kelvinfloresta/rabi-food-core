@@ -4,16 +4,16 @@ services:
     container_name: postgres
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "psql -U ${TEST_DATABASE_USER} -d ${TEST_DATABASE_NAME} -c 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "psql -U ${DATABASE_USER} -d ${DATABASE_NAME} -c 'SELECT 1' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=${TEST_DATABASE_USER}
-      - POSTGRES_PASSWORD=${TEST_DATABASE_PASSWORD}
-      - POSTGRES_DB=${TEST_DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
     volumes:
       - pgdata:/var/lib/postgresql
     networks:
@@ -27,9 +27,9 @@ services:
     environment:
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USER=${TEST_DATABASE_USER}
-      - DATABASE_NAME=${TEST_DATABASE_NAME}
-      - PGPASSWORD=${TEST_DATABASE_PASSWORD}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - PGPASSWORD=${DATABASE_PASSWORD}
     volumes:
       - ./gotrue/migration.sh:/docker-entrypoint-initdb.d/gotrue-migration.sh:ro
     depends_on:
@@ -55,7 +55,7 @@ services:
       GOTRUE_API_PORT: 9999
       API_EXTERNAL_URL: http://localhost:9999
       GOTRUE_DB_DRIVER: postgres
-      GOTRUE_DB_DATABASE_URL: postgres://${TEST_DATABASE_USER}:${TEST_DATABASE_PASSWORD}@postgres:5432/${TEST_DATABASE_NAME}?sslmode=disable&search_path=auth
+      GOTRUE_DB_DATABASE_URL: postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}?sslmode=disable&search_path=auth
       GOTRUE_JWT_SECRET: ${AUTH_SECRET}
       GOTRUE_DB_NAMESPACE: auth
       GOTRUE_JWT_EXP: 3600

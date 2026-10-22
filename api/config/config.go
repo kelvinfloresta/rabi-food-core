@@ -12,7 +12,7 @@ var (
 	StripeSecretKey       = os.Getenv("STRIPE_SECRET_KEY")
 	StripePublishableKey  = os.Getenv("STRIPE_PUBLISHABLE_KEY")
 	StripeWebhookSecret   = os.Getenv("STRIPE_WEBHOOK_SECRET")
-	ProductionDatabase = &DatabaseConfig{
+	Database = &DatabaseConfig{
 		Host:         os.Getenv("DATABASE_HOST"),
 		DatabaseName: os.Getenv("DATABASE_NAME"),
 		User:         os.Getenv("DATABASE_USER"),

@@ -8,8 +8,15 @@ import (
 	"github.com/samber/do"
 )
 
+// Built by Api.Start once the containers are up: the GoTrue, Stripe and HTTP adapters copy config
+// values on creation (the database adapter keeps a pointer and only reads it on Connect).
 var (
-	testInjector   = di.NewTest()
-	testDB         = do.MustInvoke[*database.PgxAdapter](testInjector)
-	testHTTPServer = do.MustInvoke[http.HTTPServer](testInjector)
+	testDB         *database.PgxAdapter
+	testHTTPServer http.HTTPServer
 )
+
+func buildInjector() {
+	injector := di.Injector()
+	testDB = do.MustInvoke[*database.PgxAdapter](injector)
+	testHTTPServer = do.MustInvoke[http.HTTPServer](injector)
+}

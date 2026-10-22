@@ -4,6 +4,7 @@ version: '3'
 
 vars:
   GOOSE_VERSION: v3.27.0 # keep in sync with api/go.mod
+  GOTESTSUM_VERSION: v1.13.0
 
 tasks:
   # =============================
@@ -49,23 +50,14 @@ tasks:
   # 🧪 Tests and utilities
   # =============================
   test:
-    desc: "Start Postgres and pgAdmin"
-    dotenv: ["../.env.test"]
-    dir: infra/api
-    deps: [migrate]
-    cmds:
-      - docker compose up
-
-  test-local:
-    desc: "Run tests directly (executado dentro do container Docker via task test)"
-    dotenv: ["../.env.test"]
+    desc: "Run integration tests (testcontainers starts Postgres + GoTrue; only Docker is required)"
     dir: api
     cmds:
-      - gotestsum --format testname -- ./... -p 1 -v
+      - go run gotest.tools/gotestsum@{{.GOTESTSUM_VERSION}} --format testname -- ./... {{.CLI_ARGS}}
     silent: false
 
   db:
-    desc: "Run tests inside Docker"
+    desc: "Start Postgres + GoTrue + Mailpit + pgAdmin for local development"
     dir: infra/api
     dotenv: ["../../.env.test"]
     cmds:
@@ -78,7 +70,7 @@ tasks:
     dotenv: [".env.test"]
     deps: [migrate]
     cmds:
-      - docker exec -i $(docker ps -qf "name=postgres") psql -U ${TEST_DATABASE_USER} -d ${TEST_DATABASE_NAME} < api/libs/database/seeds/seed.sql
+      - docker exec -i $(docker ps -qf "name=postgres") psql -U ${DATABASE_USER} -d ${DATABASE_NAME} < api/libs/database/seeds/seed.sql
     silent: false
 
   db-down:
@@ -96,7 +88,7 @@ tasks:
     deps: [db]
     cmds:
       - echo "goose {{.GOOSE_VERSION}}"
-      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir libs/database/migrations postgres "host=${TEST_DATABASE_HOST} user=${TEST_DATABASE_USER} password=${TEST_DATABASE_PASSWORD} port=${TEST_DATABASE_PORT} dbname=${TEST_DATABASE_NAME}" up
+      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir libs/database/migrations postgres "host=${DATABASE_HOST} user=${DATABASE_USER} password=${DATABASE_PASSWORD} port=${DATABASE_PORT} dbname=${DATABASE_NAME}" up
     silent: false
 
   migrate-status:
@@ -105,7 +97,7 @@ tasks:
     dotenv: ["../.env.test"]
     cmds:
       - echo "goose {{.GOOSE_VERSION}}"
-      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir libs/database/migrations postgres "host=${TEST_DATABASE_HOST} user=${TEST_DATABASE_USER} password=${TEST_DATABASE_PASSWORD} port=${TEST_DATABASE_PORT} dbname=${TEST_DATABASE_NAME}" status
+      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir libs/database/migrations postgres "host=${DATABASE_HOST} user=${DATABASE_USER} password=${DATABASE_PASSWORD} port=${DATABASE_PORT} dbname=${DATABASE_NAME}" status
     silent: false
 
   migrate-down:
@@ -114,7 +106,7 @@ tasks:
     dotenv: ["../.env.test"]
     cmds:
       - echo "goose {{.GOOSE_VERSION}}"
-      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir libs/database/migrations postgres "host=${TEST_DATABASE_HOST} user=${TEST_DATABASE_USER} password=${TEST_DATABASE_PASSWORD} port=${TEST_DATABASE_PORT} dbname=${TEST_DATABASE_NAME}" down
+      - go run github.com/pressly/goose/v3/cmd/goose@{{.GOOSE_VERSION}} -dir libs/database/migrations postgres "host=${DATABASE_HOST} user=${DATABASE_USER} password=${DATABASE_PASSWORD} port=${DATABASE_PORT} dbname=${DATABASE_NAME}" down
     silent: false
 
   mockgen:
@@ -159,13 +151,6 @@ tasks:
     dir: infra/monitoring
     cmds:
       - docker run --rm -v $(pwd)/alloy.config.alloy:/etc/alloy/alloy.config.alloy grafana/alloy:latest validate /etc/alloy/alloy.config.alloy
-
-  logs:
-    desc: "Watch application logs"
-    dir: infra/api
-    cmds:
-      - docker compose logs -f api
-    interactive: true
 
   clean_docker:
     desc: "Prune all system and container resources"
