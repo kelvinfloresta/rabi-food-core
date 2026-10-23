@@ -29,4 +29,7 @@ jobs:
           cache-dependency-path: api/go.sum
 
       - name: Run Tests
+        # A non-UTC timezone makes tests fail if anything depends on the server timezone. Keep in sync with Taskfile.yml.
+        env:
+          TZ: America/Sao_Paulo
         run: go run gotest.tools/gotestsum@v1.13.0 --format testname -- ./...
