@@ -259,6 +259,21 @@ func (t *TestSuite) Test_OrderIntegration_GetByID() {
 		t.Equal("Notes", found.Notes)
 	})
 
+	// Guards the timestamptz codec registered in PgxAdapter: without it pgx scans into time.Local
+	// and the API serializes the server offset (e.g. -03:00) instead of Z. CI runs with a non-UTC
+	// TZ so this fails if the codec stops being applied.
+	t.Run("should return timestamps in UTC regardless of the server timezone", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		userAuth := fixtures.Auth.UserAuth(t.T(), tenant.ID, tenant.UserID)
+		tenantAuth := fixtures.Auth.TenantOwnerAuth(t.T(), tenant.ID, tenant.UserID)
+		orderID := fixtures.Order.Create(t.T(), nil, tenantAuth)
+
+		found, status := fixtures.Order.GetByID(t.T(), orderID, userAuth)
+
+		t.Equal(http.StatusOK, status)
+		t.Equal(time.UTC.String(), found.CreatedAt.Location().String())
+	})
+
 	t.Run("should return NotFound when get by id not found", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 		userAuth := fixtures.Auth.UserAuth(t.T(), tenant.ID, tenant.UserID)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"time"
 
 	"github.com/Rabi-IT/rabi-food-core/config"
 	apiCron "github.com/Rabi-IT/rabi-food-core/libs/cron"
@@ -15,7 +14,6 @@ import (
 )
 
 func main() {
-	time.Local = time.UTC
 	l := logger.New().Logger()
 	ctx := logger.WithContext(context.Background(), &l)
 

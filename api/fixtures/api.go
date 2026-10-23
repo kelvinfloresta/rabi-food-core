@@ -26,8 +26,6 @@ type Api struct {
 }
 
 func NewApi() *Api {
-	time.Local = time.UTC
-
 	return &Api{}
 }
 

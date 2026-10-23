@@ -8,6 +8,8 @@ import (
 
 	"github.com/Rabi-IT/rabi-food-core/config"
 	"github.com/Rabi-IT/rabi-food-core/libs/logger"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,11 +28,16 @@ func NewPgx(c *config.DatabaseConfig) Database {
 
 // Connect establishes a connection pool to the database.
 func (g *PgxAdapter) Connect(ctx context.Context) error {
-	time.Local = time.UTC
-
 	logger.Get(ctx).Info().Msg("Connecting to database: " + g.config.String())
 
-	pool, err := pgxpool.New(ctx, parseDSN(g.config))
+	poolConfig, err := pgxpool.ParseConfig(parseDSN(g.config))
+	if err != nil {
+		return err
+	}
+
+	poolConfig.AfterConnect = scanTimestamptzInUTC
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		return err
 	}
@@ -64,6 +71,27 @@ func (g *PgxAdapter) Stop() error {
 	if g.Pool != nil {
 		g.Pool.Close()
 	}
+
+	return nil
+}
+
+// scanTimestamptzInUTC makes timestamptz columns scan into UTC instead of time.Local, so the
+// values read match the UTC ones written by the gateways regardless of the server timezone.
+// It only changes the location of the returned time.Time, never the instant it represents.
+func scanTimestamptzInUTC(_ context.Context, conn *pgx.Conn) error {
+	typeMap := conn.TypeMap()
+
+	timestamptz := &pgtype.Type{
+		Name:  "timestamptz",
+		OID:   pgtype.TimestamptzOID,
+		Codec: &pgtype.TimestamptzCodec{ScanLocation: time.UTC},
+	}
+	typeMap.RegisterType(timestamptz)
+	typeMap.RegisterType(&pgtype.Type{
+		Name:  "_timestamptz",
+		OID:   pgtype.TimestamptzArrayOID,
+		Codec: &pgtype.ArrayCodec{ElementType: timestamptz},
+	})
 
 	return nil
 }

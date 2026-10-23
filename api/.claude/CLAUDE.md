@@ -50,6 +50,12 @@ Migrations rodam externamente — **não são executadas pelo binário da aplica
 - O ambiente é hermético: segredos (`AUTH_SECRET`, service key do GoTrue) são gerados em `fixtures/environment.go`, nunca lidos de `.env`.
 - Só precisa de Docker. Imagens de Postgres/GoTrue devem ficar em sincronia com `infra/api/docker-compose.db.yaml`.
 
+## Datas e fuso horário
+- Colunas de data são sempre `TIMESTAMPTZ`; gateways gravam `time.Now().UTC()`.
+- O `PgxAdapter` registra no `AfterConnect` um `TimestamptzCodec{ScanLocation: time.UTC}`: tudo que é lido do banco volta em UTC, independente do fuso do servidor.
+- **Nunca** altere `time.Local` — é estado global do processo. Regras de negócio que dependem de fuso (entregas, cutoff, cron) usam `time.LoadLocation` + `.In(loc)` explicitamente.
+- Em testes, compare instantes com `.Equal()`, não com `==`.
+
 ## Health check
 - `GET /health` (sondado pelo ALB) é uma rota em `libs/http/health_check.go`, registrada em `fiber_adapter.go` **antes** dos `Use`: os middlewares nunca rodam para ela, então não gera log de request, métrica nem CORS.
 - `http.HealthCheck` (construtor `http.NewHealthCheck`) é registrado no DI e injetado em `http.New`, como os controllers. Verifica `database` (`PgxAdapter.Ping`) e `auth` (`AuthGateway.Health`), com timeout de 2s cada. Sucesso responde só `200` (sem JSON); falha responde `503` com `{"unavailable": [...]}` — o erro vai para o log, nunca para a resposta.
