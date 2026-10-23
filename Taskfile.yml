@@ -52,6 +52,9 @@ tasks:
   test:
     desc: "Run integration tests (testcontainers starts Postgres + GoTrue; only Docker is required)"
     dir: api
+    env:
+      # A non-UTC timezone makes tests fail if anything depends on the server timezone. Keep in sync with CI.
+      TZ: America/Sao_Paulo
     cmds:
       - go run gotest.tools/gotestsum@{{.GOTESTSUM_VERSION}} --format testname -- ./... {{.CLI_ARGS}}
     silent: false
