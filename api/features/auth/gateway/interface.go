@@ -17,6 +17,7 @@ type AuthGateway interface {
 	Patch(ctx context.Context, id string, input PatchInput) (bool, error)
 	Delete(ctx context.Context, id string) (bool, error)
 	Paginate(ctx context.Context, input PaginateInput) (*PaginateOutput, error)
+	Health(ctx context.Context) error
 }
 
 type CreateUserInput struct {

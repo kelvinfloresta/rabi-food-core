@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/Rabi-IT/rabi-food-core/libs/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrNotConnected = errors.New("DATABASE_NOT_CONNECTED")
 
 // PgxAdapter is the pgx implementation of the Database interface.
 type PgxAdapter struct {
@@ -45,6 +48,15 @@ func (g *PgxAdapter) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Ping checks that the database accepts connections.
+func (g *PgxAdapter) Ping(ctx context.Context) error {
+	if g.Pool == nil {
+		return ErrNotConnected
+	}
+
+	return g.Pool.Ping(ctx)
 }
 
 // Stop closes the database connection pool.

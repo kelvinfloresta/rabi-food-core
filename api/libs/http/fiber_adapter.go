@@ -41,6 +41,7 @@ func New(
 	orderController *order_controller.OrderController,
 	subscriptionController *subscription_controller.SubscriptionController,
 	paymentController *payment_controller.PaymentController,
+	healthCheck *HealthCheck,
 ) HTTPServer {
 	api := fiber.New(fiber.Config{
 		Immutable:    true,
@@ -54,14 +55,16 @@ func New(
 	prom := fiberprometheus.New("rabi-food-core")
 	prom.RegisterAt(api, "/metrics")
 
+	// Requested by the AWS load balancer to decide whether this instance receives traffic, so the
+	// path must match health_check.path in infra/terraform/alb.tf. Registered before the
+	// middlewares, which never run for it: probes are not logged, counted in metrics or subject to CORS.
+	api.Get("/health", healthCheck.Handle)
+
 	api.
 		Use(cors.New()).
 		Use(requestid.New()).
 		Use(prom.Middleware).
-		Use(middlewares.Logging()).
-		Get("/health", func(c *fiber.Ctx) error {
-			return c.SendStatus(fiber.StatusOK)
-		})
+		Use(middlewares.Logging())
 
 	if !config.Env.IsProduction() {
 		api.Static("/docs", "./libs/docs")

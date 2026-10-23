@@ -63,6 +63,7 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 		orderController := do.MustInvoke[*order_controller.OrderController](i)
 		subscriptionController := do.MustInvoke[*subscription_controller.SubscriptionController](i)
 		paymentController := do.MustInvoke[*payment_controller.PaymentController](i)
+		healthCheck := do.MustInvoke[*http.HealthCheck](i)
 
 		if config.ApiPort == "" {
 			return nil, ErrHTTPPortNotConfigured
@@ -77,7 +78,16 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 			orderController,
 			subscriptionController,
 			paymentController,
+			healthCheck,
 		), nil
+	})
+
+	// Health check
+	do.Provide(injector, func(i *do.Injector) (*http.HealthCheck, error) {
+		db := do.MustInvoke[*database.PgxAdapter](i)
+		authGateway := do.MustInvoke[auth_gateway.AuthGateway](i)
+
+		return http.NewHealthCheck(db, authGateway), nil
 	})
 
 	// Auth dependencies
