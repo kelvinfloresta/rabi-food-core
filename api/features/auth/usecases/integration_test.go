@@ -35,7 +35,7 @@ func TestMySuite(t *testing.T) {
 
 func (t *TestSuite) Test_AuthIntegration_UserPaginate() {
 	t.Run("GET /user should not be accessible by regular users", func() {
-		userID := fixtures.Auth.SignUp(t.T(), fixtures.SignUpInput{
+		userID := fixtures.Auth.SignUp(t.T(), &fixtures.SignUpInput{
 			Email:    "user@email.com",
 			Password: "password123",
 			Name:     "Regular User",

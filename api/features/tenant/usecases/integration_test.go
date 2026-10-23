@@ -38,7 +38,7 @@ func (t *TestSuite) Test_TenantIntegration_EnrollCustomer() {
 	t.Run("should enroll a customer to a tenant", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 
-		customerID := fixtures.Auth.SignUp(t.T(), fixtures.SignUpInput{
+		customerID := fixtures.Auth.SignUp(t.T(), &fixtures.SignUpInput{
 			Email:    "customer@email.com",
 			Password: "password123",
 			Name:     "Customer",
@@ -56,7 +56,7 @@ func (t *TestSuite) Test_TenantIntegration_EnrollCustomer() {
 	t.Run("should be idempotent", func() {
 		tenant := fixtures.Tenant.Create(t.T(), nil)
 
-		customerID := fixtures.Auth.SignUp(t.T(), fixtures.SignUpInput{
+		customerID := fixtures.Auth.SignUp(t.T(), &fixtures.SignUpInput{
 			Email:    "customer@email.com",
 			Password: "password123",
 			Name:     "Customer",
@@ -100,7 +100,7 @@ func (t *TestSuite) Test_TenantIntegration_Create() {
 	})
 
 	t.Run("should fail if name is missing", func() {
-		userID := fixtures.Auth.SignUp(t.T(), fixtures.SignUpInput{
+		userID := fixtures.Auth.SignUp(t.T(), &fixtures.SignUpInput{
 			Email:    "owner@email.com",
 			Password: "password123",
 			Name:     "Owner Name",

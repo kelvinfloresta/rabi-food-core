@@ -11,8 +11,8 @@ import (
 )
 
 type subscriptionFixture struct {
-	URI           string
-	BackofficeURI string
+	URI                            string
+	BackofficeURI                  string
 	DEFAULT_DISCOUNT_RULE          g.DiscountRule
 	DEFAULT_CUTOFF_OFFSET_MINUTES  uint16
 	DEFAULT_ORDER_LEAD_MINUTES     uint16
@@ -34,7 +34,7 @@ var (
 			Discount:        10, //nolint:mnd
 		},
 		DEFAULT_CUTOFF_OFFSET_MINUTES:  uint16(0),
-		DEFAULT_ORDER_LEAD_MINUTES:       uint16(120), //nolint:mnd
+		DEFAULT_ORDER_LEAD_MINUTES:     uint16(120), //nolint:mnd
 		DEFAULT_MAX_ATTEMPTS_PER_ORDER: uint8(1),
 
 		DEFAULT_TOTAL_CYCLES:        uint(1),
@@ -55,7 +55,7 @@ func (subscriptionFixture) UpsertConfig(t *testing.T, input *g.UpsertConfigInput
 				Subscription.DEFAULT_DISCOUNT_RULE,
 			},
 			CutoffOffsetMinutes: Subscription.DEFAULT_CUTOFF_OFFSET_MINUTES,
-			OrderLeadMinutes:      Subscription.DEFAULT_ORDER_LEAD_MINUTES,
+			OrderLeadMinutes:    Subscription.DEFAULT_ORDER_LEAD_MINUTES,
 		}
 	}
 
@@ -68,15 +68,35 @@ func (subscriptionFixture) UpsertConfig(t *testing.T, input *g.UpsertConfigInput
 		StatusList(http.StatusOK, http.StatusCreated)
 }
 
+// GetConfig reads the public subscription config of a tenant.
+func (subscriptionFixture) GetConfig(t *testing.T, tenantID string) g.GetConfigOutput {
+	t.Helper()
+
+	config := g.GetConfigOutput{}
+	DefaultHTTP(t).
+		Request(http.MethodGet, Subscription.URI+"config").
+		WithHeader("X-Tenant-ID", tenantID).
+		Expect().
+		Status(http.StatusOK).
+		JSON().Decode(&config)
+
+	return config
+}
+
+// Create subscribes as auth (owner or customer). A nil input subscribes to a new product of
+// auth's tenant with the default delivery and cycles.
 func (subscriptionFixture) Create(t *testing.T, input *c.CreateInput, auth RequestContext) string {
 	t.Helper()
-	Body := input
-	if Body == nil {
-		Body = &c.CreateInput{
+
+	if input == nil {
+		// Only tenant owners create products, so the product is created by an owner of auth's tenant.
+		owner := Auth.TenantOwnerAuth(t, auth.TenantID, "")
+
+		input = &c.CreateInput{
 			CheckoutKey: uuid.Must(uuid.NewV7()).String(),
 			Items: []c.SubscriptionItemInput{
 				{
-					ProductID: Product.Create(t, nil, auth),
+					ProductID: Product.Create(t, nil, owner),
 					Quantity:  1,
 				},
 			},
@@ -97,12 +117,13 @@ func (subscriptionFixture) Create(t *testing.T, input *c.CreateInput, auth Reque
 		Request(http.MethodPost, Subscription.URI).
 		WithHeader("Authorization", "Bearer "+auth.Token).
 		WithHeader("X-Tenant-ID", auth.TenantID).
-		WithJSON(Body).
+		WithJSON(input).
 		Expect().
 		Status(http.StatusCreated).
 		JSON().Decode(&ids)
 
 	require.NotEmpty(t, ids)
+
 	return ids[0]
 }
 

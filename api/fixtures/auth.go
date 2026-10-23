@@ -11,6 +11,7 @@ import (
 
 	"github.com/gavv/httpexpect/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -78,14 +79,25 @@ func (a *authFixture) TenantOwnerToken(t *testing.T, id, tenantID string) string
 	return tk
 }
 
+// UserAuth acts on tenantID through the X-Tenant-ID header, the way customers use any tenant.
+// An empty userID signs up a new real user.
 func (a *authFixture) UserAuth(t *testing.T, tenantID, userID string) RequestContext {
 	t.Helper()
+
+	if userID == "" {
+		userID = a.SignUp(t, nil)
+	}
 
 	return RequestContext{Token: a.UserToken(t, userID), TenantID: tenantID}
 }
 
+// TenantOwnerAuth signs an owner token for tenantID. An empty userID signs up a new real user.
 func (a *authFixture) TenantOwnerAuth(t *testing.T, tenantID, userID string) RequestContext {
 	t.Helper()
+
+	if userID == "" {
+		userID = a.SignUp(t, nil)
+	}
 
 	return RequestContext{Token: a.TenantOwnerToken(t, userID, tenantID), TenantID: tenantID}
 }
@@ -128,8 +140,19 @@ func (a *authFixture) SystemToken(t *testing.T) string {
 	return tk
 }
 
-func (a *authFixture) SignUp(t *testing.T, input SignUpInput) string {
+// SignUp registers a real user and returns its ID. A nil input signs up a user with a unique email.
+func (a *authFixture) SignUp(t *testing.T, input *SignUpInput) string {
 	t.Helper()
+
+	if input == nil {
+		input = &SignUpInput{
+			Email:    uuid.NewString() + "@email.com",
+			Password: "password123",
+			Name:     "User",
+			Phone:    "11977777777",
+			TaxID:    "98765432100",
+		}
+	}
 
 	out := &auth_usecases.SignUpOutput{}
 	httpexpect.Default(t, ApiURL).

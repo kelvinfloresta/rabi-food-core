@@ -46,7 +46,7 @@ func (tenantFixture) Create(t *testing.T, input *TenantCreateInput) *TenantCreat
 		}
 	}
 
-	userID := Auth.SignUp(t, SignUpInput{
+	userID := Auth.SignUp(t, &SignUpInput{
 		Email:    body.UserEmail,
 		Password: body.UserPassword,
 		Name:     body.UserName,

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/Rabi-IT/rabi-food-core/app_context"
 	g "github.com/Rabi-IT/rabi-food-core/features/subscription/gateway"
 	"github.com/Rabi-IT/rabi-food-core/libs/database"
 
@@ -19,10 +20,14 @@ import (
 // @Router /subscription/ [get].
 func (c *SubscriptionController) Paginate(ctx *fiber.Ctx) error {
 	uctx := ctx.UserContext()
-	tenantID := ctx.Get("X-Tenant-ID")
+	session := app_context.GetSession(uctx)
 
-	filter := g.PaginateFilter{
-		TenantID: tenantID,
+	// Tenant staff see every subscription of their tenant; anyone else only their own, since
+	// customers may use any tenant through the X-Tenant-ID header.
+	filter := g.PaginateFilter{TenantID: session.TenantID}
+	if !session.IsTenant() {
+		filter.TenantID = ctx.Get("X-Tenant-ID")
+		filter.UserID = session.UserID
 	}
 
 	paginate := database.PaginateInput{

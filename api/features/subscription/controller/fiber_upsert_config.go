@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 
+	"github.com/Rabi-IT/rabi-food-core/app_context"
 	gateway "github.com/Rabi-IT/rabi-food-core/features/subscription/gateway"
 	"github.com/Rabi-IT/rabi-food-core/libs/logger"
 	"github.com/Rabi-IT/rabi-food-core/libs/validator"
@@ -33,9 +34,10 @@ func (c *SubscriptionController) UpsertConfig(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	data.TenantID = ctx.Get("X-Tenant-ID")
-
 	uctx := ctx.UserContext()
+	// Management route: the tenant comes from the scoped token, never from the X-Tenant-ID header.
+	data.TenantID = app_context.GetSession(uctx).TenantID
+
 	logger.GetWideEvent(uctx).Event = "upsert-subscription-config"
 	err = c.usecase.UpsertConfig(uctx, data)
 	if err != nil {

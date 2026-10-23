@@ -21,7 +21,7 @@ func SubscriptionProtected(app *fiber.App, c *controller.SubscriptionController)
 	route.Post("/", c.Create)
 	route.Get("/", c.Paginate)
 	route.Get("/:id", c.GetByID)
-	route.Put("/config", c.UpsertConfig)
+	route.Put("/config", middlewares.RequireTenant, c.UpsertConfig)
 
 	backoffice := app.Group("/backoffice/subscription", middlewares.RequireBackoffice)
 	backoffice.Get("/", c.BackofficePaginate)
