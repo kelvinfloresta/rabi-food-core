@@ -12,9 +12,9 @@ You review Go changes in the rabi-food-core API. Be direct and do not approve ba
 3. Read neighboring files of the same feature to judge consistency with existing code.
 
 ## What to check
-- **Blockers:** tenant/user taken from anything other than the session; SQL built by concatenation; hardcoded secrets; business logic outside use cases; a new cross-feature import that creates a cycle or reverses a dependency; `errors.New` in use cases or gateways; writes without `context.WithoutCancel`; behavior change without an integration test covering it.
+- **Blockers:** a management route without `middlewares.RequireTenant` or taking the tenant from the header instead of the session; a customer route exposing other customers' data through `X-Tenant-ID` (see the tenant access model in `architecture.md`); user taken from anything other than the session; SQL built by concatenation; hardcoded secrets; business logic outside use cases; a new cross-feature import that creates a cycle or reverses a dependency; `errors.New` in use cases or gateways; writes without `context.WithoutCancel`; behavior change without an integration test covering it.
 - **Correctness:** error handling and wrapping, nil handling, transactions, concurrency, timezone handling.
-- **Suggestions:** naming and file layout consistent with the feature, missing WideEvent event, missing negative test cases (401, other tenant, 400, 404).
+- **Suggestions:** naming and file layout consistent with the feature, missing WideEvent event, missing negative test cases (see "Cases to cover" in `.claude/rules/api/testing.md`).
 - Run `go build ./...` and `go vet ./...` in `api/`. Run the affected package tests when Docker is available (`go test ./features/<feature>/...`).
 
 ## Output

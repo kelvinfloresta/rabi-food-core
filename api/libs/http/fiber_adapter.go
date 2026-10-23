@@ -1,12 +1,14 @@
 package http
 
 import (
+	"fmt"
+
 	"github.com/Rabi-IT/rabi-food-core/config"
 	auth_controller "github.com/Rabi-IT/rabi-food-core/features/auth/controller"
 	category_controller "github.com/Rabi-IT/rabi-food-core/features/category/controller"
 	order_controller "github.com/Rabi-IT/rabi-food-core/features/order/controller"
-	product_controller "github.com/Rabi-IT/rabi-food-core/features/product/controller"
 	payment_controller "github.com/Rabi-IT/rabi-food-core/features/payment/controller"
+	product_controller "github.com/Rabi-IT/rabi-food-core/features/product/controller"
 	subscription_controller "github.com/Rabi-IT/rabi-food-core/features/subscription/controller"
 	tenant_controller "github.com/Rabi-IT/rabi-food-core/features/tenant/controller"
 
@@ -17,6 +19,7 @@ import (
 	product_routes "github.com/Rabi-IT/rabi-food-core/features/product/routes"
 	subscription_routes "github.com/Rabi-IT/rabi-food-core/features/subscription/routes"
 	tenant_routes "github.com/Rabi-IT/rabi-food-core/features/tenant/routes"
+	"github.com/Rabi-IT/rabi-food-core/libs/errs"
 	"github.com/Rabi-IT/rabi-food-core/libs/http/middlewares"
 
 	fiberprometheus "github.com/ansrivas/fiberprometheus/v2"
@@ -50,6 +53,11 @@ func New(
 
 	jwtMiddleware := jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{Key: []byte(config.AuthSecret)},
+		// Every token failure (missing, malformed or invalid) is a 401 in the API's error format.
+		// jwtware's default handler means to return 400 for a missing token and plain text for both.
+		ErrorHandler: func(_ *fiber.Ctx, err error) error {
+			return fmt.Errorf("%w: %w", errs.ErrInvalidToken, err)
+		},
 	})
 
 	prom := fiberprometheus.New("rabi-food-core")
