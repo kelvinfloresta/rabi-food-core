@@ -14,11 +14,12 @@ Feature-based modular monolith: `api/features/<feature>/{controller,gateway,rout
 - New services are registered in `libs/di/new.go` with `do.Provide`. Adapters copy `config` values when created, so nothing may build the injector before config is final (tests override config in `fixtures/environment.go`).
 
 ## Security
-- Tenant access model:
-  - **Customers** can use any tenant: customer-facing routes (catalog, order, subscription, payment) take the tenant from the `X-Tenant-ID` header (`middlewares.RequireTenantID`). No membership is required, by design.
-  - **Tenant owners/staff** act through a scoped token: `exchange-token` / `refresh-scoped` check membership (`GetMembership`, 403 otherwise) and put `tenant_id` and `tenant_role` in the claims. Management routes take the tenant from `app_context.GetSession(ctx)`, never from the header.
-- Every management route (anything that changes or lists a tenant's own data) needs `middlewares.RequireTenant` on the route. `RequireTenantID` only checks that the header exists — it authorizes nothing.
-- On customer routes the header only picks the tenant: queries must still be scoped to the session user, or any user can read other customers' data by sending their tenant's ID.
+- Tenant access model (why: `docs/decisions/001-shared-customer-accounts.md`):
+  - **Customers** can use any tenant: customer-facing routes (catalog, order, subscription, payment) take the tenant from the `X-Tenant-ID` header (`middlewares.RequireTenantID`). No membership is required, by design. The header only selects the tenant — it authorizes nothing.
+  - **Tenant owners/staff** act through a scoped token: `exchange-token` / `refresh-scoped` check membership (`GetMembership`, 403 otherwise) and put `tenant_id` and `tenant_role` in the claims.
+- Acting **as** the tenant — changing its data, or reading data across its customers (e.g. every customer's subscriptions, `GET /tenant/me`) — requires the scoped token: `middlewares.RequireTenant` on the route, tenant from `app_context.GetSession(ctx)`, never from the header.
+- On customer routes, queries must be scoped to the session user, or any user can read other customers' data by sending their tenant's ID.
+- A route serving both (e.g. `GET /subscription`, `GET /order`) skips `RequireTenant` and branches on `session.IsTenant()`: session tenant when true, header tenant plus session user otherwise.
 - `UserID` comes from the session; tenant and user are never read from the request body.
 - Token failures (missing, malformed, invalid) are always `401 INVALID_TOKEN`, via the jwtware `ErrorHandler` in `libs/http/fiber_adapter.go`.
 - SQL is built with squirrel/placeholders, never by string concatenation.

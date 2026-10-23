@@ -5,7 +5,7 @@ Multi-tenant subscription food ordering platform.
 - `api/` — Go modular monolith (Fiber, pgx, samber/do). Tests: `task test` (Docker only).
 - `web/` — React Router 8 SSR app (Tailwind v4, shadcn/ui, i18next). Check: `npm run typecheck` in `web/`.
 - `infra/` — local dev compose (`task db`) and Terraform (AWS ECS + ALB).
-- `docs/product-context.md` — customer profiles and product decisions. Read it before any UX or product rule change, and flag conflicts with it explicitly.
+- `docs/product-context.md` — customer profiles, positioning and the index of product decisions (`docs/decisions/`). Read it and the relevant decisions before any UX or product rule change, and flag conflicts with them explicitly.
 
 ## Language
 All code, comments, documentation and commit messages are in English.
@@ -14,7 +14,7 @@ All code, comments, documentation and commit messages are in English.
 - **Features:** plan first (plan mode), iterate on one plan, then implement. No spec/plan/tasks document hierarchy.
 - **Small changes and bugfixes:** implement directly.
 - **Business rules (pricing, cutoff, billing, tenant isolation):** the integration tests are the spec. A rule change comes with a test that would fail without it.
-- **Architecture decisions** with lasting consequences (feature boundaries, new infrastructure, cross-cutting patterns): record a short ADR in `docs/decisions/` — see the template there.
+- **Product and architecture decisions** with lasting consequences (product rules and their reasons, feature boundaries, new infrastructure, cross-cutting patterns): record a short decision in `docs/decisions/` — see the template there.
 - **Before committing:** run the checks of the affected subproject and ask the `api-reviewer` or `web-reviewer` subagent for a review.
 
 ## Where instructions live

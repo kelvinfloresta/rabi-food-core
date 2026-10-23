@@ -1,6 +1,8 @@
-# Architecture decision records
+# Decision records
 
-One file per decision with lasting consequences: feature boundaries, new infrastructure, cross-cutting patterns. Not for features or bugfixes — those are planned in the conversation and recorded by the code and its tests.
+One file per decision with lasting consequences, product or architecture: product rules and their reasons, feature boundaries, new infrastructure, cross-cutting patterns. Not for features or bugfixes — those are planned in the conversation and recorded by the code and its tests.
+
+List product decisions in the index at the end of `docs/product-context.md`.
 
 Name files `NNN-short-title.md` (e.g. `001-payment-subscription-boundary.md`). Never rewrite an accepted record: when a decision changes, add a new one and mark the old one `Superseded by NNN`.
 
