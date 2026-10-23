@@ -1,32 +1,29 @@
-# rabi-food-core — Contexto para Claude Code
+# rabi-food-core
 
-## Idioma
-Todo código, comentário, documentação e mensagem de commit DEVE ser em **inglês**.
+Multi-tenant subscription food ordering platform.
 
-## Agentes especializados
+- `api/` — Go modular monolith (Fiber, pgx, samber/do). Tests: `task test` (Docker only).
+- `web/` — React Router 8 SSR app (Tailwind v4, shadcn/ui, i18next). Check: `npm run typecheck` in `web/`.
+- `infra/` — local dev compose (`task db`) and Terraform (AWS ECS + ALB).
+- `docs/product-context.md` — customer profiles and product decisions. Read it before any UX or product rule change, and flag conflicts with it explicitly.
 
-Antes de implementar qualquer coisa neste projeto, invoque o agente correspondente via Skill:
+## Language
+All code, comments, documentation and commit messages are in English.
 
-| Tarefa | Agente |
-|--------|--------|
-| Decisões de UX, fluxo de navegação ou regras de produto | `/product` |
-| Implementar features, handlers, gateways, use cases, migrations, DI (Go) | `/api-dev` |
-| Escrever ou revisar testes de integração (Go) | `/api-test` |
-| Decisões de arquitetura ou dependências entre features | `/api-architect` |
-| Revisar código Go antes de commitar | `/api-review` |
-| Implementar componentes, páginas e UI (web) | `/web-dev` |
-| Revisar código web antes de commitar | `/web-review` |
+## How we work
+- **Features:** plan first (plan mode), iterate on one plan, then implement. No spec/plan/tasks document hierarchy.
+- **Small changes and bugfixes:** implement directly.
+- **Business rules (pricing, cutoff, billing, tenant isolation):** the integration tests are the spec. A rule change comes with a test that would fail without it.
+- **Architecture decisions** with lasting consequences (feature boundaries, new infrastructure, cross-cutting patterns): record a short ADR in `docs/decisions/` — see the template there.
+- **Before committing:** run the checks of the affected subproject and ask the `api-reviewer` or `web-reviewer` subagent for a review.
 
-**Regra:** se a tarefa envolve código Go, invoque `/api-dev` antes de escrever. Se envolve código web, invoque `/web-dev` antes de escrever. Se a tarefa envolve uma decisão de UX, fluxo ou produto — antes de qualquer implementação — invoque `/product`. Os agentes conhecem todos os padrões obrigatórios de cada subprojeto e vão guiar a implementação correta.
+## Where instructions live
+- `.claude/rules/` — conventions, scoped with `paths:` so they load only for matching files.
+- `.claude/agents/` — reviewers with isolated context. `.claude/skills/` — on-demand workflows (`/product`).
+- `.claude/settings.json` — hooks for what must be enforced (Go files are gofmt-ed after every edit).
 
-## Documentação de padrões — onde registrar
-
-Este repositório tem três arquivos CLAUDE.md com escopos distintos:
-
-| Arquivo | Escopo |
-|---------|--------|
-| `.claude/CLAUDE.md` (este) | Regras globais: idioma, agentes, meta-regras |
-| `api/.claude/CLAUDE.md` | Padrões exclusivos do backend Go |
-| `web/.claude/CLAUDE.md` | Padrões exclusivos do frontend React/TypeScript |
-
-**Regra:** sempre que um novo padrão, convenção ou decisão técnica for estabelecida, registre-a no arquivo correspondente ao escopo onde se aplica. Não coloque regras de frontend no CLAUDE.md raiz nem regras de backend no CLAUDE.md do web.
+## Maintaining these files
+- Only write what cannot be inferred by reading the code: intent, invariants, past mistakes, non-obvious constraints. Existing code is the reference for structure and naming.
+- Add a rule when Claude makes the same mistake twice, not preemptively.
+- When a change makes a rule wrong, fix the rule in the same change. A stale rule is worse than no rule.
+- If something must always happen, make it a hook, lint rule or test instead of prose.
