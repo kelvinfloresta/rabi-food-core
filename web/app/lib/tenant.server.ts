@@ -1,4 +1,5 @@
 import { apiClient } from "~/lib/api.server"
+import type { Result } from "./result"
 
 const DASHBOARD_SLUGS = new Set(["app", "www"])
 
@@ -10,16 +11,19 @@ export type Tenant = {
 }
 
 export function getTenantSlug(request: Request): string | null {
-  const host = request.headers.get("host") ?? ""
-  const hostname = host.split(":")[0] // strip port
-  const parts = hostname.split(".")
+  const host = request.headers.get("host")
+  if (!host) return null
+  const indexOfDot = host.indexOf(".")
+  
+  if (indexOfDot === -1) return null
+  const slug = host.slice(0, indexOfDot)
 
   // bare localhost or app.* subdomain → dashboard
-  if (parts.length === 1 || DASHBOARD_SLUGS.has(parts[0])) {
+  if (slug === "localhost" || DASHBOARD_SLUGS.has(slug)) {
     return null
   }
 
-  return parts[0]
+  return slug
 }
 
 export function isDashboard(request: Request): boolean {
