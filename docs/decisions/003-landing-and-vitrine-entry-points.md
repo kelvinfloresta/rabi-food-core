@@ -1,16 +1,21 @@
-# 003. Two entry points: landing page and vitrine
+# 003. Duas portas de entrada: landing page e vitrine
 
-- Status: Accepted
-- Date: 2026-05-01
+- Status: Substituída pela 006
+- Data: 2026-05-01
 
-## Context
-The two customer profiles (see `docs/product-context.md`) arrive with different needs: the Discoverer must understand the subscription model before committing; the Decider already knows what they want and needs minimum friction.
+## Contexto
+Assinar comida é um hábito novo para a maioria das pessoas: o mercado está acostumado a pedir na hora, não a se comprometer com antecedência. Por isso o produto recebe dois tipos de pessoa com necessidades opostas. Quem ainda não conhece o modelo (o Descobridor) precisa ser convencido de que vale a pena — se for jogado direto numa lista de produtos, não entende o que está comprando e vai embora. Quem já conhece (o Decidido) está parado na frente da loja com o celular na mão — se tiver que ler uma explicação, desiste. Uma página só, tentando servir aos dois, falha com os dois.
 
-## Decision
-- **Landing page** for the Discoverer (search, social media, word of mouth). It communicates value before the subscription flow: convenience and organization, competitive pricing, fresh food, and support for local businesses.
-- **Vitrine** for the Decider (QR code at the establishment, link shared by another customer). It *is* the product listing where the customer picks what to subscribe to: no "subscribe" button leading to another listing.
-- The vitrine does not explain the product; it links to the landing page.
+## Decisão
+- Cada pessoa chega pela porta feita para ela: quem precisa entender encontra explicação; quem já decidiu encontra os produtos.
+- Cada página tem uma única função e não repete a da outra.
+- Nenhuma das duas fecha o caminho: o Decidido sempre pode ir buscar a explicação, se quiser.
 
-## Consequences
-- Each page has one job, and neither duplicates the other's.
-- Links that are shared or printed (QR codes) point to the vitrine, not the landing page.
+Na prática:
+- **Landing page** para o Descobridor (busca, redes sociais, indicação). Ela comunica o valor antes do fluxo de assinatura: conveniência e organização, preço competitivo, comida fresca e apoio aos negócios locais.
+- **Vitrine** para o Decidido (QR code no estabelecimento, link compartilhado por outro cliente). Ela *é* a listagem de produtos onde o cliente escolhe o que assinar: sem botão "assinar" que leve a outra listagem.
+- A vitrine não explica o produto; ela leva para a landing page.
+
+## Consequências
+- Cada página tem uma função, e nenhuma duplica a da outra.
+- Links compartilhados ou impressos (QR codes) apontam para a vitrine, não para a landing page.

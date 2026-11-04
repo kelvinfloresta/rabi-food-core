@@ -1,25 +1,27 @@
-# Decision records
+# Registros de decisão
 
-One file per decision with lasting consequences, product or architecture: product rules and their reasons, feature boundaries, new infrastructure, cross-cutting patterns. Not for features or bugfixes — those are planned in the conversation and recorded by the code and its tests.
+Um arquivo por decisão com consequências duradouras, de produto ou de arquitetura: regras de produto e seus motivos, limites entre funcionalidades, nova infraestrutura, padrões transversais. Não serve para funcionalidades ou correções — essas são planejadas na conversa e registradas pelo código e pelos testes.
 
-List product decisions in the index at the end of `docs/product-context.md`.
+Liste as decisões de produto no índice ao final de `docs/product-context.md`, no grupo do tema a que pertencem (as substituídas vão para o grupo "Substituídas"). Os números são identificadores permanentes: nunca renumere um registro.
 
-Name files `NNN-short-title.md` (e.g. `001-payment-subscription-boundary.md`). Never rewrite an accepted record: when a decision changes, add a new one and mark the old one `Superseded by NNN`.
+Nomeie os arquivos como `NNN-titulo-curto.md` (ex.: `001-payment-subscription-boundary.md`). Nunca reescreva um registro aceito: quando uma decisão muda, crie um novo e marque o antigo como `Substituída pela NNN`. Os documentos são escritos em português.
 
-## Template
+## Modelo
+
+Escreva pelo porquê (Golden Circle). O contexto conta o propósito — que problema do cliente ou do estabelecimento existe e por que importa para o posicionamento — sem detalhes de implementação. A decisão começa pelos princípios que seguem desse porquê e só depois chega às regras concretas, cada uma com o seu motivo. As regras mudam com o tempo; o motivo dura mais. Se o contexto não convence sozinho, a decisão ainda não está madura.
 
 ```markdown
-# NNN. Title
+# NNN. Título
 
-- Status: Proposed | Accepted | Superseded by NNN
-- Date: YYYY-MM-DD
+- Status: Proposta | Aceita | Substituída pela NNN
+- Data: AAAA-MM-DD
 
-## Context
-What forces the decision, in a few sentences.
+## Contexto
+Por que isso importa: o problema e o propósito, em poucas frases.
 
-## Decision
-What we do.
+## Decisão
+Os princípios e, na prática, as regras.
 
-## Consequences
-What becomes easier, what becomes harder, and what we accept.
+## Consequências
+O que fica mais fácil, o que fica mais difícil e o que aceitamos.
 ```

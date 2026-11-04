@@ -8,7 +8,7 @@ Multi-tenant subscription food ordering platform.
 - `docs/product-context.md` — customer profiles, positioning and the index of product decisions (`docs/decisions/`). Read it and the relevant decisions before any UX or product rule change, and flag conflicts with them explicitly.
 
 ## Language
-All code, comments, documentation and commit messages are in English.
+Code, comments, technical documentation (READMEs, `.claude/`) and commit messages are in English. Product documents in `docs/` (product context, market analysis, decisions) are in Portuguese (pt-BR), so the product owner can read them without translating.
 
 ## How we work
 - **Features:** plan first (plan mode), iterate on one plan, then implement. No spec/plan/tasks document hierarchy.

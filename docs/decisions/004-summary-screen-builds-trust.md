@@ -1,19 +1,24 @@
-# 004. The summary screen is where trust is built
+# 004. A tela de resumo é onde a confiança é construída
 
-- Status: Accepted
-- Date: 2026-05-01
+- Status: Aceita
+- Data: 2026-05-01
 
-## Context
-The final step of the subscription wizard is where the customer decides whether to commit. A commitment without a trial (see 002) only works if the customer trusts what they are agreeing to.
+## Contexto
+Pedimos ao cliente algo que o mercado raramente pede: pagar adiantado por um compromisso, sem período de teste (ver 002). Ninguém faz isso com quem não confia. A confiança não nasce de letras miúdas nem de uma lista de itens para conferir — nasce de saber exatamente o que vai acontecer. O último passo antes de confirmar é o momento em que o cliente decide se confia ou desiste, e é ali que o produto ganha ou perde a venda.
 
-## Decision
-The summary is a trust-building screen, not a bureaucratic checklist. It answers the questions the customer has not asked out loud:
+## Decisão
+- Responder às dúvidas que o cliente tem e não fala em voz alta, antes que elas virem desistência.
+- Mostrar o concreto (datas, valores) em vez do abstrato (dias da semana, "conforme o plano").
+- Deixar a saída tão visível quanto o compromisso.
 
-- When will I receive? Concrete dates, not just weekdays.
-- How much will I pay, and when?
-- What happens if I want to cancel? Substitution and refund shown separately (see 002).
-- Can I change later?
+Na prática:
+O resumo responde:
 
-## Consequences
-- The summary needs concrete delivery dates and charge dates before the customer confirms, so they must be computable before the subscription exists.
-- It is the most important step of the flow; changes to it deserve the most care.
+- Quando vou receber? Datas concretas, não apenas dias da semana.
+- Quanto vou pagar, e quando?
+- O que acontece se eu quiser cancelar? Substituição e reembolso mostrados separadamente (ver 002).
+- Posso mudar depois?
+
+## Consequências
+- O resumo precisa das datas concretas de entrega e de cobrança antes de o cliente confirmar, então elas precisam ser calculáveis antes de a assinatura existir.
+- É o passo mais importante do fluxo; mudanças nele merecem o maior cuidado.

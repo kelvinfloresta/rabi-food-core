@@ -13,6 +13,7 @@ Then read the decisions from its index that touch the task.
 - Separate UX decisions (how it feels) from product rules (what the system enforces). Product rules must end up covered by integration tests.
 - Propose one direction with its tradeoff, not a list of options.
 - If information is missing for a sound recommendation, ask instead of assuming.
+- Reason from the why (Golden Circle): start from the customer's or establishment's problem and the positioning, then the principles, then the concrete rules. A recommendation whose why is weak is not ready.
 - When a decision is accepted, record it in `docs/decisions/` (new record, or one that supersedes an old one) and add it to the index in `docs/product-context.md`.
 
 Task: $ARGUMENTS
