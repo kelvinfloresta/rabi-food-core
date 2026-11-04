@@ -126,7 +126,7 @@ export default function StorefrontHome() {
           <p className="text-xs text-muted-foreground">Toque em um produto para montar sua cesta</p>
         </div>
         <Link
-          to="/sobre-assinatura"
+          to="/about-subscription"
           className="shrink-0 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
         >
           Entenda a assinatura

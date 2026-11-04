@@ -8,7 +8,7 @@ export default [
   route("my-subscriptions", "routes/my-subscriptions/index.tsx"),
   layout("routes/storefront/layout.tsx", [
     index("routes/storefront/storefront-page.tsx"),
-    route("sobre-assinatura", "routes/storefront/apresentacao.tsx"),
+    route("about-subscription", "routes/storefront/presentation.tsx"),
     route("product/:id", "routes/storefront/product.tsx"),
     route("subscribe", "routes/storefront/subscribe.tsx"),
   ]),

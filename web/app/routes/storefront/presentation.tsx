@@ -62,7 +62,7 @@ function useReveal() {
   return ref
 }
 
-export default function Apresentacao() {
+export default function Presentation() {
   const ref = useReveal()
 
   return (
