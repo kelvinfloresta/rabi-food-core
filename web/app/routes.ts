@@ -9,7 +9,6 @@ export default [
   layout("routes/storefront/layout.tsx", [
     index("routes/storefront/storefront-page.tsx"),
     route("about-subscription", "routes/storefront/presentation.tsx"),
-    route("product/:id", "routes/storefront/product.tsx"),
     route("subscribe", "routes/storefront/subscribe.tsx"),
   ]),
 ] satisfies RouteConfig;
