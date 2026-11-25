@@ -21,21 +21,35 @@ func init() {
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	base = newBase(os.Stdout, config.Env == "production")
-}
+	base = NewWithOutput(os.Stdout, config.Env == "production")
 
-// newBase builds the application logger. Production writes JSON; other environments write readable text.
-func newBase(out io.Writer, production bool) zerolog.Logger {
-	if !production {
-		out = zerolog.ConsoleWriter{
-			Out:        out,
-			TimeFormat: time.RFC3339,
-			NoColor:    true,
-		}
+	level, err := zerolog.ParseLevel(config.LogLevel)
+	if err != nil || level == zerolog.NoLevel {
+		// A typo in LOG_LEVEL must not take the API down: keep the default and say so.
+		level = zerolog.InfoLevel
+		base.Warn().Str("log_level", config.LogLevel).Msg("invalid LOG_LEVEL, using info")
 	}
 
-	return zerolog.New(out).With().Timestamp().Str("version", config.ApiVersion).Logger()
+	zerolog.SetGlobalLevel(level)
+}
+
+// NewWithOutput builds the application logger writing to out. Production writes JSON; other environments
+// write readable text. The app uses it once, for os.Stdout; tests use it to capture the production log.
+func NewWithOutput(out io.Writer, production bool) zerolog.Logger {
+	if production {
+		return newLogger(out)
+	}
+
+	return newLogger(zerolog.ConsoleWriter{
+		Out:        out,
+		TimeFormat: time.RFC3339,
+		NoColor:    true,
+	})
+}
+
+// newLogger holds what every environment shares: only the writer differs between them.
+func newLogger(writer io.Writer) zerolog.Logger {
+	return zerolog.New(writer).With().Timestamp().Str("version", config.ApiVersion).Logger()
 }
 
 // Get retrieves the logger from the given context.

@@ -3,16 +3,18 @@ package config
 import "os"
 
 var (
-	ApiPort               = os.Getenv("API_PORT")
-	ApiVersion            = os.Getenv("API_VERSION")
-	AuthSecret            = os.Getenv("AUTH_SECRET")
-	Env                   = environment(os.Getenv("ENV"))
-	GoTrueURL             = os.Getenv("GOTRUE_URL")
-	GoTrueServiceKey      = os.Getenv("GOTRUE_SERVICE_KEY")
-	StripeSecretKey       = os.Getenv("STRIPE_SECRET_KEY")
-	StripePublishableKey  = os.Getenv("STRIPE_PUBLISHABLE_KEY")
-	StripeWebhookSecret   = os.Getenv("STRIPE_WEBHOOK_SECRET")
-	Database = &DatabaseConfig{
+	ApiPort    = os.Getenv("API_PORT")
+	ApiVersion = os.Getenv("API_VERSION")
+	AuthSecret = os.Getenv("AUTH_SECRET")
+	Env        = environment(os.Getenv("ENV"))
+	// LogLevel is a zerolog level name: trace, debug, info, warn, error, fatal, panic or disabled.
+	LogLevel             = getEnv("LOG_LEVEL", "info")
+	GoTrueURL            = os.Getenv("GOTRUE_URL")
+	GoTrueServiceKey     = os.Getenv("GOTRUE_SERVICE_KEY")
+	StripeSecretKey      = os.Getenv("STRIPE_SECRET_KEY")
+	StripePublishableKey = os.Getenv("STRIPE_PUBLISHABLE_KEY")
+	StripeWebhookSecret  = os.Getenv("STRIPE_WEBHOOK_SECRET")
+	Database             = &DatabaseConfig{
 		Host:         os.Getenv("DATABASE_HOST"),
 		DatabaseName: os.Getenv("DATABASE_NAME"),
 		User:         os.Getenv("DATABASE_USER"),
@@ -20,6 +22,14 @@ var (
 		Port:         os.Getenv("DATABASE_PORT"),
 	}
 )
+
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+
+	return fallback
+}
 
 type DatabaseConfig struct {
 	Host string

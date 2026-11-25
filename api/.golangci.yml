@@ -3,7 +3,6 @@ run:
   timeout: 5m
 linters:
   disable:
-    - depguard
     - wrapcheck
     - wsl_v5
     - wsl
@@ -27,3 +26,48 @@ linters:
   # - `fast`: enables only linters considered as "fast" (`golangci-lint help linters --json | jq '[ .[] | select(.fast==true) ] | map(.name)'`).
   # Default: standard
   default: all
+  settings:
+    depguard:
+      # Implementation libraries stay behind the project's own packages, so code (and AI) use the
+      # project's wrappers and configuration instead of building their own.
+      rules:
+        logger:
+          files:
+            - $all
+            - "!**/libs/logger/**"
+            - "!**/libs/http/middlewares/logger_middleware.go"
+          deny:
+            - pkg: github.com/rs/zerolog
+              desc: use libs/logger; to check log output in tests, use fixtures.Logger
+        logger-tests:
+          # libs/logger may use zerolog, but its tests must go through the production logger.
+          files:
+            - "**/libs/logger/*_test.go"
+          deny:
+            - pkg: github.com/rs/zerolog
+              desc: use fixtures.Logger so tests check the log with the production config
+        stripe:
+          files:
+            - $all
+            - "!**/features/*/gateway/**"
+            - "!**/features/subscription/controller/fiber_on_payment_received.go"
+          deny:
+            - pkg: github.com/stripe/stripe-go
+              desc: Stripe is only called from a feature gateway (and parsed in its webhook controller)
+        no-http-below-controller:
+          files:
+            - "**/features/*/usecases/**"
+            - "**/features/*/gateway/**"
+            - "**/domain/**"
+          deny:
+            - pkg: github.com/gofiber/fiber
+              desc: HTTP belongs to controllers and routes; return an errs.ApiError instead
+        no-database-above-gateway:
+          files:
+            - "**/features/*/usecases/**"
+            - "**/features/*/controller/**"
+            - "**/features/*/routes/**"
+            - "**/domain/**"
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: database access belongs to the feature gateway

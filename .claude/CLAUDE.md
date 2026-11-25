@@ -20,7 +20,7 @@ Code, comments, technical documentation (READMEs, `.claude/`) and commit message
 ## Where instructions live
 - `.claude/rules/` — conventions, scoped with `paths:` so they load only for matching files.
 - `.claude/agents/` — reviewers with isolated context. `.claude/skills/` — on-demand workflows (`/product`).
-- `.claude/settings.json` — hooks for what must be enforced (Go files are gofmt-ed after every edit).
+- `.claude/settings.json` — hooks for what must be enforced (Go files are gofmt-ed after every edit, and their package is checked by depguard: which layer may import zerolog, Stripe, Fiber or pgx is in `api/.golangci.yml`).
 
 ## Maintaining these files
 - Only write what cannot be inferred by reading the code: intent, invariants, past mistakes, non-obvious constraints. Existing code is the reference for structure and naming.
