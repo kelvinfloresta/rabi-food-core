@@ -5,6 +5,7 @@ import (
 
 	"github.com/Rabi-IT/rabi-food-core/domain/auth"
 	g "github.com/Rabi-IT/rabi-food-core/features/auth/gateway"
+	"github.com/Rabi-IT/rabi-food-core/libs/errs"
 )
 
 type SignUpInput struct {
@@ -44,6 +45,7 @@ func (c *AuthCase) SignUp(ctx context.Context, input *SignUpInput) (SignUpOutput
 		Neighborhood: input.Neighborhood,
 		Role:         auth.User,
 	})
+
 	if err != nil {
 		return SignUpOutput{}, err
 	}
@@ -52,8 +54,10 @@ func (c *AuthCase) SignUp(ctx context.Context, input *SignUpInput) (SignUpOutput
 		Email:    input.Email,
 		Password: input.Password,
 	})
+
+	// The user already exists at this point, so a sign-in failure must not look like a sign-up failure.
 	if err != nil {
-		return SignUpOutput{}, err
+		return SignUpOutput{}, errs.SignUpSignInFailed(err)
 	}
 
 	return SignUpOutput{ID: out.ID, Email: out.Email, AccessToken: tokenOut.AccessToken}, nil

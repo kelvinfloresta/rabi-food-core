@@ -11,4 +11,16 @@ var (
 	ErrUserAlreadyExists   = newErr("USER_ALREADY_EXISTS", http.StatusConflict)
 	ErrAuthServiceFailure  = newErr("AUTH_SERVICE_FAILURE", http.StatusServiceUnavailable)
 	ErrMissingTenantID     = newErr("MISSING_TENANT_ID", http.StatusBadRequest)
+	// ErrSignUpSignInFailed means the account was created but the automatic sign-in after it failed. Clients must tell
+	// the user the sign-up succeeded and send them to sign in, not show a sign-up failure.
+	ErrSignUpSignInFailed = newErr("SIGNUP_SIGNIN_FAILED", http.StatusServiceUnavailable)
 )
+
+// SignUpSignInFailed keeps the sign-in failure as the cause, so the log shows why it failed
+// while the client only sees SIGNUP_SIGNIN_FAILED.
+func SignUpSignInFailed(cause error) *ApiError {
+	e := *ErrSignUpSignInFailed
+	e.err = cause
+
+	return &e
+}
