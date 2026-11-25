@@ -5,6 +5,9 @@ paths:
 
 # Web conventions
 
+## Checks
+- `npm run typecheck` in `web/`.
+
 ## Rendering and control flow
 - No ternaries in JSX. A single optional block uses `{condition && <X />}`; two mutually exclusive blocks use an early return before the main JSX.
 - No `else` anywhere — use early returns. Nested ifs move into a helper function with early returns.

@@ -2,9 +2,9 @@
 
 Multi-tenant subscription food ordering platform.
 
-- `api/` — Go modular monolith (Fiber, pgx, samber/do). Tests: `task test` (Docker only).
-- `web/` — React Router 8 SSR app (Tailwind v4, shadcn/ui, i18next). Check: `npm run typecheck` in `web/`.
-- `infra/` — local dev compose (`task db`) and Terraform (AWS ECS + ALB).
+- `api/` — Go backend.
+- `web/` — React Router SSR frontend.
+- `infra/` — local dev environment (`task db`) and Terraform.
 - `docs/product-context.md` — customer profiles, positioning and the index of product decisions (`docs/decisions/`). Read it and the relevant decisions before any UX or product rule change, and flag conflicts with them explicitly.
 
 ## Language
@@ -13,16 +13,16 @@ Code, comments, technical documentation (READMEs, `.claude/`) and commit message
 ## How we work
 - **Features:** plan first (plan mode), iterate on one plan, then implement. No spec/plan/tasks document hierarchy.
 - **Small changes and bugfixes:** implement directly.
-- **Business rules (pricing, cutoff, billing, tenant isolation):** the integration tests are the spec. A rule change comes with a test that would fail without it.
 - **Product and architecture decisions** with lasting consequences (product rules and their reasons, feature boundaries, new infrastructure, cross-cutting patterns): record a short decision in `docs/decisions/` — see the template there.
-- **Before committing:** run the checks of the affected subproject and ask the `api-reviewer` or `web-reviewer` subagent for a review.
+- **Before committing:** run the checks of the affected subproject (listed in its rules) and ask the `api-reviewer` or `web-reviewer` subagent for a review.
 
 ## Where instructions live
 - `.claude/rules/` — conventions, scoped with `paths:` so they load only for matching files.
 - `.claude/agents/` — reviewers with isolated context. `.claude/skills/` — on-demand workflows (`/product`).
-- `.claude/settings.json` — hooks for what must be enforced (Go files are gofmt-ed after every edit, and their package is checked by depguard: which layer may import zerolog, Stripe, Fiber or pgx is in `api/.golangci.yml`).
+- `.claude/settings.json` — hooks for what must be enforced; each hook reports what it blocked and where its rules live.
 
 ## Maintaining these files
+- This file loads in every session, whatever the subproject: keep here only what applies to the whole repository. What is specific to `api/`, `web/` or `infra/` goes in a rule under `.claude/rules/`, scoped with `paths:` to that subproject.
 - Only write what cannot be inferred by reading the code: intent, invariants, past mistakes, non-obvious constraints. Existing code is the reference for structure and naming.
 - Add a rule when Claude makes the same mistake twice, not preemptively.
 - When a change makes a rule wrong, fix the rule in the same change. A stale rule is worse than no rule.
