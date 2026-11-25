@@ -27,6 +27,15 @@ linters:
   # Default: standard
   default: all
   settings:
+    forbidigo:
+      forbid:
+        # forbidigo's default rule, kept because setting `forbid` replaces it.
+        - pattern: ^(fmt\.Print(|f|ln)|print|println)$
+        # Scoped to features/ by the exclusions below.
+        - pattern: ^errors\.New$
+          msg: >-
+            errors are errs.ApiError declared in libs/errs, one code per failure so error_code identifies
+            it; wrap a cause with fmt.Errorf("%w: %w", errs.ErrX, err)
     depguard:
       # Implementation libraries stay behind the project's own packages, so code (and AI) use the
       # project's wrappers and configuration instead of building their own.
@@ -71,3 +80,13 @@ linters:
           deny:
             - pkg: github.com/jackc/pgx
               desc: database access belongs to the feature gateway
+  exclusions:
+    rules:
+      # errors.New is only forbidden in features/ code: libs/ declares infrastructure errors and
+      # tests declare causes for fakes.
+      - path-except: ^features/
+        linters: [forbidigo]
+        text: errors\.New
+      - path: _test\.go
+        linters: [forbidigo]
+        text: errors\.New

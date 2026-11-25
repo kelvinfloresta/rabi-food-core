@@ -1,4 +1,5 @@
-// PostToolUse hook for edited Go files: gofmt the file, then run depguard on its package in api/.
+// PostToolUse hook for edited Go files: gofmt the file, then run the forbidden-usage linters (depguard,
+// forbidigo) on its package in api/.
 //
 // Problems are reported back to Claude with a "block" decision on stdout, so they are fixed in the same
 // turn instead of surfacing only in CI. Anything else (golangci-lint missing, compile errors mid-edit) is
@@ -41,8 +42,8 @@ func main() {
 		return
 	}
 
-	if violations := depguard(path); len(violations) > 0 {
-		block("Forbidden imports (see depguard rules in api/.golangci.yml):\n" + strings.Join(violations, "\n"))
+	if violations := forbiddenUsages(path); len(violations) > 0 {
+		block("Forbidden usages (see depguard and forbidigo in api/.golangci.yml):\n" + strings.Join(violations, "\n"))
 	}
 }
 
@@ -50,7 +51,8 @@ func block(reason string) {
 	_ = json.NewEncoder(os.Stdout).Encode(hookOutput{Decision: "block", Reason: reason})
 }
 
-func depguard(path string) []string {
+// forbiddenUsages runs only the fast linters that guard project conventions, to keep the hook under a second.
+func forbiddenUsages(path string) []string {
 	projectDir := os.Getenv("CLAUDE_PROJECT_DIR")
 	if projectDir == "" {
 		return nil
@@ -66,14 +68,14 @@ func depguard(path string) []string {
 		return nil
 	}
 
-	cmd := exec.Command("golangci-lint", "run", "--enable-only", "depguard", "./"+filepath.ToSlash(rel))
+	cmd := exec.Command("golangci-lint", "run", "--enable-only", "depguard,forbidigo", "./"+filepath.ToSlash(rel))
 	cmd.Dir = apiDir
 	out, _ := cmd.Output() // exits 1 when there are issues; the output is what matters
 
 	var violations []string
 	for line := range strings.Lines(string(out)) {
 		line = strings.TrimSpace(line)
-		if strings.HasSuffix(line, "(depguard)") {
+		if strings.HasSuffix(line, "(depguard)") || strings.HasSuffix(line, "(forbidigo)") {
 			violations = append(violations, line)
 		}
 	}
