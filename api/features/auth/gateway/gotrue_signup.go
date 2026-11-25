@@ -20,11 +20,6 @@ type adminCreateUserRequest struct {
 	AppMetadata  map[string]any `json:"app_metadata"`
 }
 
-type adminCreateUserResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-}
-
 func (g *GoTrueGatewayAdapter) CreateUser(ctx context.Context, input CreateUserInput) (*CreateUserOutput, error) {
 	body := adminCreateUserRequest{
 		Email:        input.Email,
@@ -78,10 +73,10 @@ func (g *GoTrueGatewayAdapter) CreateUser(ctx context.Context, input CreateUserI
 		return nil, wrapResponseError(errs.ErrAuthServiceFailure, resp)
 	}
 
-	var result adminCreateUserResponse
+	var result CreateUserOutput
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
 	}
 
-	return &CreateUserOutput{ID: result.ID, Email: result.Email}, nil
+	return &result, nil
 }

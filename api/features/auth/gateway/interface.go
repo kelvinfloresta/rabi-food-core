@@ -37,8 +37,8 @@ type CreateUserInput struct {
 }
 
 type CreateUserOutput struct {
-	ID    string
-	Email string
+	ID    string `json:"id"`
+	Email string `json:"email"`
 }
 
 type SignInInput struct {
