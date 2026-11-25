@@ -147,18 +147,17 @@ func (w *WideEvent) SetErrorCode(code string) {
 	w.errorCode = code
 }
 
-func (w *WideEvent) FinishRequest(statusCode int, err error, latencyMs int64) {
+// FinishRequest records the request outcome. errorCode is the code sent to the client, logged even when
+// err is nil (validation errors are not logged as errors, but their code is).
+func (w *WideEvent) FinishRequest(statusCode int, errorCode string, err error, latencyMs int64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	w.StatusCode = statusCode
 	w.LatencyMs = latencyMs
+	w.errorCode = errorCode
 	if err != nil {
 		w.err = err.Error()
-		var apiError *errs.ApiError
-		if errors.As(err, &apiError) {
-			w.errorCode = apiError.Code
-		}
 	}
 }
 
@@ -169,8 +168,8 @@ func (w *WideEvent) FinishCronJob(err error, latencyMs int64) {
 	w.LatencyMs = latencyMs
 	if err != nil {
 		w.err = err.Error()
-		var apiError *errs.ApiError
-		if errors.As(err, &apiError) {
+		w.errorCode = errs.ErrInternal.Code
+		if apiError, ok := errors.AsType[*errs.ApiError](err); ok {
 			w.errorCode = apiError.Code
 		}
 	}

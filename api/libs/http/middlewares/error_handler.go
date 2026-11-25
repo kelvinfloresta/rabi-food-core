@@ -16,9 +16,11 @@ type ValidationErrorResponse struct {
 	Errors []lib.ValidationError `json:"errors"`
 }
 
+const codeValidationError = "VALIDATION_ERROR"
+
 var (
-	errBodyInternalError = []byte(`{"code":"INTERNAL_ERROR"}`)
-	errBodyInvalidToken  = []byte(`{"code":"INVALID_TOKEN"}`)
+	errBodyInternalError = []byte(`{"code":"` + errs.ErrInternal.Code + `"}`)
+	errBodyInvalidToken  = []byte(`{"code":"` + errs.ErrInvalidToken.Code + `"}`)
 )
 
 // ErrorHandler is a middleware that handles errors occurring during request processing.
@@ -28,7 +30,7 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 	validationErr, ok := err.(validator.ValidationErrors)
 	if ok {
 		return ctx.Status(fiber.StatusBadRequest).JSON(ValidationErrorResponse{
-			Code:   "VALIDATION_ERROR",
+			Code:   codeValidationError,
 			Errors: lib.ParseValidationError(validationErr),
 		})
 	}

@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"io"
 	"os"
 	"time"
 
@@ -21,15 +22,20 @@ func init() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if config.Env != "production" {
-		base = zerolog.New(zerolog.ConsoleWriter{
-			Out:        os.Stdout,
+	base = newBase(os.Stdout, config.Env == "production")
+}
+
+// newBase builds the application logger. Production writes JSON; other environments write readable text.
+func newBase(out io.Writer, production bool) zerolog.Logger {
+	if !production {
+		out = zerolog.ConsoleWriter{
+			Out:        out,
 			TimeFormat: time.RFC3339,
 			NoColor:    true,
-		}).With().Timestamp().Str("version", config.ApiVersion).Logger()
-	} else {
-		base = zerolog.New(os.Stdout).With().Timestamp().Str("version", config.ApiVersion).Logger()
+		}
 	}
+
+	return zerolog.New(out).With().Timestamp().Str("version", config.ApiVersion).Logger()
 }
 
 // Get retrieves the logger from the given context.

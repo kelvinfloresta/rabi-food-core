@@ -20,7 +20,8 @@ func ProductNotFound(productIDs ...string) *ApiError {
 	}
 
 	e := *ErrProductNotFound
-	e.Code = fmt.Sprintf("%s__%s", ErrProductNotFound.Code, strings.Join(productIDs, "_"))
+	// The IDs go in FullCode (sent to the client) so Code stays a fixed value for the error_code log field.
+	e.FullCode = fmt.Sprintf("%s__%s", ErrProductNotFound.Code, strings.Join(productIDs, "_"))
 
 	// To allow errors.Is checks
 	e.err = ErrProductNotFound

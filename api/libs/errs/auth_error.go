@@ -15,12 +15,3 @@ var (
 	// the user the sign-up succeeded and send them to sign in, not show a sign-up failure.
 	ErrSignUpSignInFailed = newErr("SIGNUP_SIGNIN_FAILED", http.StatusServiceUnavailable)
 )
-
-// SignUpSignInFailed keeps the sign-in failure as the cause, so the log shows why it failed
-// while the client only sees SIGNUP_SIGNIN_FAILED.
-func SignUpSignInFailed(cause error) *ApiError {
-	e := *ErrSignUpSignInFailed
-	e.err = cause
-
-	return &e
-}

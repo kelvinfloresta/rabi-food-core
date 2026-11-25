@@ -67,6 +67,7 @@ func Test_SignUp(t *testing.T) {
 		apiErr, ok := errors.AsType[*errs.ApiError](err)
 		require.True(t, ok)
 		assert.Equal(t, errs.ErrSignUpSignInFailed.Code, apiErr.Code)
+		require.ErrorIs(t, err, errs.ErrSignUpSignInFailed)
 		assert.ErrorIs(t, err, errGotrueUnavailable, "the sign-in cause must be kept for logging")
 	})
 
@@ -85,8 +86,7 @@ func Test_SignUp(t *testing.T) {
 
 		_, err := uc.SignUp(t.Context(), signUpInput())
 
-		apiErr, ok := errors.AsType[*errs.ApiError](err)
-		require.True(t, ok)
-		assert.Equal(t, errs.ErrUserAlreadyExists.Code, apiErr.Code)
+		require.ErrorIs(t, err, errs.ErrUserAlreadyExists)
+		assert.NotErrorIs(t, err, errs.ErrSignUpSignInFailed)
 	})
 }

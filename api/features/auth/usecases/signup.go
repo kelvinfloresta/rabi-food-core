@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Rabi-IT/rabi-food-core/domain/auth"
 	g "github.com/Rabi-IT/rabi-food-core/features/auth/gateway"
@@ -57,7 +58,7 @@ func (c *AuthCase) SignUp(ctx context.Context, input *SignUpInput) (SignUpOutput
 
 	// The user already exists at this point, so a sign-in failure must not look like a sign-up failure.
 	if err != nil {
-		return SignUpOutput{}, errs.SignUpSignInFailed(err)
+		return SignUpOutput{}, fmt.Errorf("%w: %w", errs.ErrSignUpSignInFailed, err)
 	}
 
 	return SignUpOutput{ID: out.ID, Email: out.Email, AccessToken: tokenOut.AccessToken}, nil

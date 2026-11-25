@@ -40,8 +40,10 @@ func Logging() fiber.Handler {
 
 		// Determine status code and log level.
 		statusCode := c.Response().StatusCode()
+		errorCode := ""
 		if err != nil {
 			statusCode = classifyStatus(err)
+			errorCode = classifyCode(err)
 		}
 
 		isValidationError := err != nil && errors.As(err, new(validator.ValidationErrors))
@@ -50,7 +52,7 @@ func Logging() fiber.Handler {
 			// Don't log ValidationErrors as errors to avoid noise and high cardinality in log aggregation
 			errToLog = nil
 		}
-		wd.FinishRequest(statusCode, errToLog, time.Since(start).Milliseconds())
+		wd.FinishRequest(statusCode, errorCode, errToLog, time.Since(start).Milliseconds())
 
 		l := logger.New().Logger()
 		var event *zerolog.Event
@@ -93,4 +95,25 @@ func classifyStatus(err error) int {
 	}
 
 	return fiber.StatusInternalServerError
+}
+
+// classifyCode mirrors the ErrorHandler logic to determine the error code sent to the client.
+// It feeds the error_code log field, which must stay low-cardinality: never put IDs or messages in it.
+func classifyCode(err error) string {
+	var validationErr validator.ValidationErrors
+	if errors.As(err, &validationErr) {
+		return codeValidationError
+	}
+
+	var apiErr *errs.ApiError
+	if errors.As(err, &apiErr) {
+		return apiErr.Code
+	}
+
+	var fiberErr *fiber.Error
+	if errors.As(err, &fiberErr) && fiberErr.Code == fiber.StatusUnauthorized {
+		return errs.ErrInvalidToken.Code
+	}
+
+	return errs.ErrInternal.Code
 }

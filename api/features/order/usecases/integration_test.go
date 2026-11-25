@@ -150,7 +150,8 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 			Expect().
 			Status(http.StatusNotFound).
 			JSON().Object().
-			Value("code").IsEqual(expectedError.Code)
+			HasValue("code", expectedError.Code).
+			HasValue("fullCode", expectedError.FullCode)
 	})
 
 	t.Run("should fail when some product IDs are missing in the database", func() {
@@ -178,7 +179,8 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 			Expect().
 			Status(http.StatusNotFound).
 			JSON().Object().
-			Value("code").IsEqual(expectedError.Code)
+			HasValue("code", expectedError.Code).
+			HasValue("fullCode", expectedError.FullCode)
 	})
 
 	t.Run("should use X-Tenant-ID header, ignoring tenantID in body", func() {
@@ -241,7 +243,8 @@ func (t *TestSuite) Test_OrderIntegration_Create() {
 			Expect().
 			Status(http.StatusNotFound).
 			JSON().Object().
-			Value("code").IsEqual(execpectedError.Code)
+			HasValue("code", execpectedError.Code).
+			HasValue("fullCode", execpectedError.FullCode)
 	})
 }
 
