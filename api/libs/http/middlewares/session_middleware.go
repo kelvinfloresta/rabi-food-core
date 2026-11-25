@@ -39,7 +39,7 @@ func Session(c *fiber.Ctx) error {
 
 	uctx := c.UserContext()
 	we := logger.GetWideEvent(uctx)
-	we.SetUserID(session.UserID)
+	we.SetAuthUserID(session.UserID)
 	if session.IsTenant() {
 		we.SetMemberTenantID(session.TenantID)
 	}
