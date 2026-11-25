@@ -8,6 +8,9 @@ import (
 // ErrInternal is the code sent for any error that is not an ApiError.
 var ErrInternal = newErr("INTERNAL_ERROR", http.StatusInternalServerError)
 
+// ErrInvalidBody is a request body that cannot be parsed (e.g. malformed JSON).
+var ErrInvalidBody = newErr("INVALID_BODY", http.StatusBadRequest)
+
 // ApiError is sent to the client as {"code", "fullCode", "status"}. Code is a fixed value per error, for
 // clients to branch on and for the error_code log field. FullCode adds the variable detail (IDs, statuses)
 // for developers to read, and is omitted when the error has none.

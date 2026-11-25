@@ -20,13 +20,13 @@ Feature-based modular monolith: `api/features/<feature>/{controller,gateway,rout
 ## Security
 - Tenant access model (why: `docs/decisions/001-shared-customer-accounts.md`):
   - **Customers** can use any tenant: customer-facing routes (catalog, order, subscription, payment) take the tenant from the `X-Tenant-ID` header (`middlewares.RequireSelectedTenant`). No membership is required, by design. The header only selects the tenant — it authorizes nothing.
-  - **Tenant owners/staff** act through a scoped token: `exchange-token` / `refresh-scoped` check membership (`GetMembership`, 403 otherwise) and put `tenant_id` and `tenant_role` in the claims. Signing in alone never gives tenant access, and customers never get this token. Use `session.IsTenant()`, not `session.TenantID` alone, to tell the two apart.
+  - **Tenant owners/staff** act through a scoped token: `/auth/tenant/switch` / `refresh-scoped` check membership (`GetMembership`, 403 otherwise) and put `tenant_id` and `tenant_role` in the claims. Signing in alone never gives tenant access, and customers never get this token. Use `session.IsTenant()`, not `session.TenantID` alone, to tell the two apart.
   - Any member role passes `RequireTenantMember`. Telling owner and staff apart is a product decision to record in `docs/decisions/` before a route depends on it.
 - Acting **as** the tenant — changing its data, or reading data across its customers (e.g. every customer's subscriptions, `GET /tenant/me`) — requires the scoped token: `middlewares.RequireTenantMember` on the route, tenant from `app_context.GetSession(ctx)`, never from the header.
 - On customer routes, queries must be scoped to the session user, or any user can read other customers' data by sending their tenant's ID.
 - A route serving both (e.g. `GET /subscription`, `GET /order`) skips `RequireTenantMember` and branches on `session.IsTenant()`: session tenant when true, header tenant plus session user otherwise.
 - `UserID` comes from the session; tenant and user are never read from the request body.
-- The log records only the tenant a customer selected (`selected_tenant_id`, from the `X-Tenant-ID` header of any request). The tenant a member acts for is not logged: it follows from `user_id`.
+- The log keeps the two tenants apart: `selected_tenant_id` is the tenant a customer selected (`X-Tenant-ID` header), `member_tenant_id` the tenant a member acts for (member token).
 - Token failures (missing, malformed, invalid) are always `401 INVALID_TOKEN`, via the jwtware `ErrorHandler` in `libs/http/fiber_adapter.go`.
 - SQL is built with squirrel/placeholders, never by string concatenation.
 
@@ -38,7 +38,7 @@ Feature-based modular monolith: `api/features/<feature>/{controller,gateway,rout
 
 ## Handlers
 - Parse, then `validator.V.Struct(data)`, then set `logger.GetWideEvent(uctx).Event = "<verb>-<entity>"`, then call the use case. Some read handlers still miss the WideEvent event — add it when touching them.
-- A `BodyParser` error must become a 400. Never `return ctx.JSON(err)`: it answers **200** with the parse error — a known bug in most create/patch handlers; fix it when touching them.
+- A `BodyParser` error must become a 400: `fmt.Errorf("%w: %w", errs.ErrInvalidBody, err)`. Never `return ctx.JSON(err)`: it answers **200** with the parse error — a known bug in most create/patch handlers; fix it when touching them.
 
 ## Health check
 - `GET /health` (`libs/http/health_check.go`) is registered before the middlewares and is probed by the ALB; its path must match `infra/terraform/alb.tf`.

@@ -15,18 +15,18 @@ import (
 // issued.
 const scopedTokenTTL = 30 * time.Minute
 
-type ExchangeTokenInput struct {
+type SwitchTenantInput struct {
 	TenantID string `json:"tenantId" validate:"required,uuid"`
 }
 
-type ExchangeTokenOutput struct {
+type SwitchTenantOutput struct {
 	AccessToken string `json:"accessToken"`
 	ExpiresIn   int    `json:"expiresIn"`
 	TokenType   string `json:"tokenType"`
 }
 
-// ExchangeToken issues a token for acting as a member of one tenant. Only its members get one.
-func (c *AuthCase) ExchangeToken(ctx context.Context, input *ExchangeTokenInput) (*ExchangeTokenOutput, error) {
+// SwitchTenant issues a token for acting as a member of the given tenant. Only its members get one.
+func (c *AuthCase) SwitchTenant(ctx context.Context, input *SwitchTenantInput) (*SwitchTenantOutput, error) {
 	session := app_context.GetSession(ctx)
 
 	member, err := c.tenantCase.GetMembership(ctx, session.UserID, input.TenantID)
@@ -61,7 +61,7 @@ func (c *AuthCase) ExchangeToken(ctx context.Context, input *ExchangeTokenInput)
 		return nil, fmt.Errorf("%w: %w", errs.ErrScopedTokenSignFailed, err)
 	}
 
-	return &ExchangeTokenOutput{
+	return &SwitchTenantOutput{
 		AccessToken: signed,
 		ExpiresIn:   int(scopedTokenTTL.Seconds()),
 		TokenType:   "Bearer",

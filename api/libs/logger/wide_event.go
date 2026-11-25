@@ -32,9 +32,10 @@ type WideEvent struct {
 	subscriptionID string
 	// userID is who made the request (the session user), set by the session middleware.
 	userID string
-	// selectedTenantID is the tenant a customer selected for the request. The tenant a member acts for is not
-	// logged: it follows from userID.
+	// selectedTenantID is the tenant a customer selected for the request.
 	selectedTenantID string
+	// memberTenantID is the tenant a member acts for.
+	memberTenantID string
 
 	// Payment
 	externalPaymentID         string
@@ -85,6 +86,12 @@ func (w *WideEvent) SetSubscriptionID(id string) {
 func (w *WideEvent) SetUserID(id string) {
 	w.mu.Lock()
 	w.userID = id
+	w.mu.Unlock()
+}
+
+func (w *WideEvent) SetMemberTenantID(id string) {
+	w.mu.Lock()
+	w.memberTenantID = id
 	w.mu.Unlock()
 }
 
@@ -194,6 +201,7 @@ func (w *WideEvent) reset() {
 	w.subscriptionID = ""
 	w.userID = ""
 	w.selectedTenantID = ""
+	w.memberTenantID = ""
 
 	w.externalPaymentID = ""
 	w.originalExternalPaymentID = ""
@@ -250,6 +258,9 @@ func (w *WideEvent) MarshalZerologObject(e *zerolog.Event) {
 	}
 	if w.selectedTenantID != "" {
 		e.Str("selected_tenant_id", w.selectedTenantID)
+	}
+	if w.memberTenantID != "" {
+		e.Str("member_tenant_id", w.memberTenantID)
 	}
 
 	if w.externalPaymentID != "" {

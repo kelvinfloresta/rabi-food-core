@@ -13,7 +13,7 @@ O cliente compra de vários negócios locais: a padaria, o hortifrúti, a marmit
 
 Na prática:
 - Um mesmo usuário (GoTrue) é reutilizado em todos os estabelecimentos. O cliente pode navegar, pedir e assinar em qualquer um sem ser membro dele; as rotas do cliente recebem o estabelecimento pelo header `X-Tenant-ID`, que apenas escolhe onde o cliente está agindo.
-- Agir **como** o estabelecimento — alterar os dados dele ou ler dados de vários clientes dele — exige um token com escopo do estabelecimento, emitido por `exchange-token` / `refresh-scoped` somente para membros (`iam.tenant_members`).
+- Agir **como** o estabelecimento — alterar os dados dele ou ler dados de vários clientes dele — exige um token com escopo do estabelecimento, emitido por `/auth/tenant/switch` / `refresh-scoped` somente para membros (`iam.tenant_members`).
 - `iam.tenant_customers` registra a relação comercial (quem é cliente de qual estabelecimento, via `enroll-customers`). Ela não controla acesso.
 
 ## Consequências

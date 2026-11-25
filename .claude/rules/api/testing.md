@@ -17,7 +17,7 @@ paths:
 - Happy path, asserting the persisted result (read it back), not only the status.
 - Management routes (owner/staff): another tenant's resource → **404**, never 403, so existence is not revealed; list endpoints must simply not return it. Customer routes are tenant-agnostic by design (tenant from `X-Tenant-ID`), so test that data is scoped to the header's tenant, not that access is denied.
 - Customer routes: also test that a user sending another tenant's `X-Tenant-ID` sees only their own data (`fixtures.Auth.UserAuth(t, tenantID, "")` signs up a user with no membership).
-- Owner/staff tokens in fixtures are signed directly (`fixtures.Auth.TenantOwnerAuth`), so the membership check in `exchange-token` / `refresh-scoped` needs its own auth tests — not covered yet.
+- Owner/staff tokens in fixtures are signed directly (`fixtures.Auth.TenantOwnerAuth`), so the membership check needs its own auth tests: covered for `/auth/tenant/switch` (`Test_AuthIntegration_SwitchTenant`), not yet for `refresh-scoped`.
 - Insufficient role (e.g. customer on a management route) → 403 `FORBIDDEN`.
 - Token failures → 401 `INVALID_TOKEN`. Covered once for all protected routes in `Test_AuthIntegration_ProtectedRouteToken`; do not repeat per endpoint.
 - Missing required fields → 400 with code `VALIDATION_ERROR`.

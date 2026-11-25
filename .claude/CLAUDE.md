@@ -10,6 +10,9 @@ Multi-tenant subscription food ordering platform.
 ## Language
 Code, comments, technical documentation (READMEs, `.claude/`) and commit messages are in English. Product documents in `docs/` (product context, market analysis, decisions) are in Portuguese (pt-BR), so the product owner can read them without translating.
 
+## Comments
+Comments state the purpose of the code. Leave out what can change while the purpose stays the same (other components, endpoints, status codes, file names, current limitations) and rules already in `.claude/rules/`: those details go stale and mislead.
+
 ## How we work
 - **Features:** plan first (plan mode), iterate on one plan, then implement. No spec/plan/tasks document hierarchy.
 - **Small changes and bugfixes:** implement directly.

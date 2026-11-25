@@ -81,6 +81,49 @@ func (t *TestSuite) Test_AuthIntegration_ProtectedRouteToken() {
 	}
 }
 
+func (t *TestSuite) Test_AuthIntegration_SwitchTenant() {
+	t.Run("should give a member a token that acts as the tenant", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+
+		token := fixtures.DefaultHTTP(t.T()).Request(http.MethodPost, "/auth/tenant/switch").
+			WithHeader("Authorization", "Bearer "+fixtures.Auth.UserToken(t.T(), tenant.UserID)).
+			WithJSON(map[string]string{"tenantId": tenant.ID}).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().Value("accessToken").String().NotEmpty().Raw()
+
+		fixtures.DefaultHTTP(t.T()).Request(http.MethodGet, "/tenant/me").
+			WithHeader("Authorization", "Bearer "+token).
+			Expect().
+			Status(http.StatusOK).
+			JSON().Object().HasValue("id", tenant.ID)
+	})
+
+	t.Run("should return 403 FORBIDDEN to a user who is not a member", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		outsider := fixtures.Auth.UserAuth(t.T(), tenant.ID, "")
+
+		fixtures.DefaultHTTP(t.T()).Request(http.MethodPost, "/auth/tenant/switch").
+			WithHeader("Authorization", "Bearer "+outsider.Token).
+			WithJSON(map[string]string{"tenantId": tenant.ID}).
+			Expect().
+			Status(http.StatusForbidden).
+			JSON().Object().HasValue("code", errs.ErrForbidden.Code)
+	})
+
+	t.Run("should return 400 INVALID_BODY for a malformed body", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+
+		fixtures.DefaultHTTP(t.T()).Request(http.MethodPost, "/auth/tenant/switch").
+			WithHeader("Authorization", "Bearer "+fixtures.Auth.UserToken(t.T(), tenant.UserID)).
+			WithHeader("Content-Type", "application/json").
+			WithText("{not json").
+			Expect().
+			Status(http.StatusBadRequest).
+			JSON().Object().HasValue("code", errs.ErrInvalidBody.Code)
+	})
+}
+
 // The request log is what tells which tenant a customer was using when something failed.
 func (t *TestSuite) Test_AuthIntegration_RequestLog() {
 	t.Run("should log the tenant selected in the X-Tenant-ID header", func() {
@@ -94,6 +137,34 @@ func (t *TestSuite) Test_AuthIntegration_RequestLog() {
 
 		fields := fixtures.Logger.Request(t.T(), requestID)
 		t.Equal(tenant.ID, fields["selected_tenant_id"])
+	})
+
+	t.Run("should log the tenant a member acts for", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		owner := fixtures.Auth.TenantOwnerAuth(t.T(), tenant.ID, tenant.UserID)
+
+		requestID := fixtures.DefaultHTTP(t.T()).Request(http.MethodGet, "/tenant/me").
+			WithHeader("Authorization", "Bearer "+owner.Token).
+			Expect().
+			Status(http.StatusOK).
+			Header("X-Request-ID").NotEmpty().Raw()
+
+		fields := fixtures.Logger.Request(t.T(), requestID)
+		t.Equal(tenant.ID, fields["member_tenant_id"])
+	})
+
+	t.Run("should not log a member tenant for a customer", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+		customer := fixtures.Auth.UserAuth(t.T(), tenant.ID, "")
+
+		requestID := fixtures.DefaultHTTP(t.T()).Request(http.MethodGet, "/user/me").
+			WithHeader("Authorization", "Bearer "+customer.Token).
+			Expect().
+			Status(http.StatusOK).
+			Header("X-Request-ID").NotEmpty().Raw()
+
+		fields := fixtures.Logger.Request(t.T(), requestID)
+		t.NotContains(fields, "member_tenant_id")
 	})
 
 	t.Run("should not log a selected tenant without the header", func() {
