@@ -2,15 +2,16 @@ package subscription_gateway
 
 import (
 	"context"
-	"errors"
 	"time"
+
+	"github.com/Rabi-IT/rabi-food-core/libs/errs"
 
 	sq "github.com/Masterminds/squirrel"
 )
 
 func (g *PgxSubscriptionGatewayAdapter) Patch(ctx context.Context, filter PatchFilter, values PatchValues) (bool, error) {
 	if filter.ID == "" && filter.TenantID == "" && len(filter.Statuses) == 0 && filter.PaymentStatus == "" {
-		return false, errors.New("patch requires at least one filter")
+		return false, errs.ErrSubscriptionPatchWithoutFilter
 	}
 
 	b := sq.

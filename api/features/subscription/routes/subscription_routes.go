@@ -9,7 +9,7 @@ import (
 
 // Subscription registers subscription routes that do not require a JWT.
 func Subscription(app *fiber.App, c *controller.SubscriptionController) {
-	route := app.Group("/subscription", middlewares.RequireTenantID)
+	route := app.Group("/subscription", middlewares.RequireSelectedTenant)
 	route.Get("/config", c.GetConfig)
 
 	app.Post("/subscription/webhook/payment-received", c.OnPaymentReceived)
@@ -17,11 +17,11 @@ func Subscription(app *fiber.App, c *controller.SubscriptionController) {
 
 // SubscriptionProtected registers subscription routes that require a valid JWT.
 func SubscriptionProtected(app *fiber.App, c *controller.SubscriptionController) {
-	route := app.Group("/subscription", middlewares.RequireTenantID)
+	route := app.Group("/subscription", middlewares.RequireSelectedTenant)
 	route.Post("/", c.Create)
 	route.Get("/", c.Paginate)
 	route.Get("/:id", c.GetByID)
-	route.Put("/config", middlewares.RequireTenant, c.UpsertConfig)
+	route.Put("/config", middlewares.RequireTenantMember, c.UpsertConfig)
 
 	backoffice := app.Group("/backoffice/subscription", middlewares.RequireBackoffice)
 	backoffice.Get("/", c.BackofficePaginate)

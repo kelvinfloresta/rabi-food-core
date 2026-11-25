@@ -7,7 +7,7 @@ import (
 )
 
 func PaymentProtected(app *fiber.App, c *payment_controller.PaymentController) {
-	route := app.Group("/payment", middlewares.RequireTenantID)
+	route := app.Group("/payment", middlewares.RequireSelectedTenant)
 	route.Get("/profile", c.GetProfile)
 	route.Post("/charge", c.Charge)
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/Rabi-IT/rabi-food-core/domain/tenant"
 	g "github.com/Rabi-IT/rabi-food-core/features/tenant/gateway"
-	"github.com/Rabi-IT/rabi-food-core/libs/logger"
 )
 
 func (c *TenantCase) Create(ctx context.Context, name, ownerUserID string) (string, error) {
@@ -20,7 +19,6 @@ func (c *TenantCase) Create(ctx context.Context, name, ownerUserID string) (stri
 	}
 
 	id, err := c.gateway.Create(ctx, input)
-	logger.GetWideEvent(ctx).SetTenantID(id)
 
 	return id, err
 }

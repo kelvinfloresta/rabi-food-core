@@ -47,6 +47,12 @@ func NewWithOutput(out io.Writer, production bool) zerolog.Logger {
 	})
 }
 
+// SetOutput sends the logs to out, in the production format. Tests use it to read the log the API
+// emits; call it before the API serves requests.
+func SetOutput(out io.Writer) {
+	base = NewWithOutput(out, true)
+}
+
 // newLogger holds what every environment shares: only the writer differs between them.
 func newLogger(writer io.Writer) zerolog.Logger {
 	return zerolog.New(writer).With().Timestamp().Str("version", config.ApiVersion).Logger()

@@ -14,8 +14,8 @@ func Auth(app *fiber.App, c *controller.AuthController) {
 	route.Post("/signin", c.SignIn)
 	route.Post("/otp", c.SendOTP)
 	route.Post("/otp/verify", c.VerifyOTP)
-	route.Post("/refresh", c.Refresh)
-	route.Post("/refresh-scoped", c.RefreshScoped)
+	route.Post("/refresh", c.Refresh)              // renews the sign-in token
+	route.Post("/refresh-scoped", c.RefreshScoped) // renews a tenant member token
 }
 
 // AuthProtected registers auth routes that require a valid JWT.

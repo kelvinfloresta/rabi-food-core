@@ -19,7 +19,7 @@ func TenantProtected(app *fiber.App, c *controller.TenantController) {
 	app.Post("/tenant/:id/enroll-customers", c.EnrollCustomer)
 
 	// Tenant Authorization required
-	route := app.Group("/tenant", middlewares.RequireTenant)
+	route := app.Group("/tenant", middlewares.RequireTenantMember)
 	route.Get("/me", c.GetMe)
 	route.Patch("/me", c.PatchMe)
 

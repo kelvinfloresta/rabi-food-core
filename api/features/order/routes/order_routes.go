@@ -10,7 +10,7 @@ import (
 // OrderProtected registers order routes that require a valid JWT.
 func OrderProtected(app *fiber.App, c *controller.OrderController) {
 	route := app.Group("/order")
-	route.Post("/", middlewares.RequireTenantID, c.Create)
+	route.Post("/", middlewares.RequireSelectedTenant, c.Create)
 	route.Delete("/:id", c.Delete)
 	route.Get("/:id", c.GetByID)
 	route.Get("/", c.Paginate)

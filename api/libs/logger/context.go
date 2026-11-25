@@ -6,8 +6,6 @@ const (
 	// Event represents the event name context key.
 	EventName = "event"
 
-	ActorID = "actor_id"
-
 	// RequestID represents the request identifier context key.
 	RequestID = "request_id"
 

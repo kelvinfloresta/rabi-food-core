@@ -26,15 +26,15 @@ type WideEvent struct {
 	LatencyMs  int64
 	RequestID  string
 
-	ActorID       string
-	ActorTenantID string
-
 	orderID        string
 	categoryID     string
 	productID      string
 	subscriptionID string
-	userID         string
-	tenantID       string
+	// userID is who made the request (the session user), set by the session middleware.
+	userID string
+	// selectedTenantID is the tenant a customer selected for the request. The tenant a member acts for is not
+	// logged: it follows from userID.
+	selectedTenantID string
 
 	// Payment
 	externalPaymentID         string
@@ -88,9 +88,9 @@ func (w *WideEvent) SetUserID(id string) {
 	w.mu.Unlock()
 }
 
-func (w *WideEvent) SetTenantID(id string) {
+func (w *WideEvent) SetSelectedTenantID(id string) {
 	w.mu.Lock()
-	w.tenantID = id
+	w.selectedTenantID = id
 	w.mu.Unlock()
 }
 
@@ -188,15 +188,12 @@ func (w *WideEvent) reset() {
 	w.LatencyMs = 0
 	w.RequestID = ""
 
-	w.ActorID = ""
-	w.ActorTenantID = ""
-
 	w.orderID = ""
 	w.categoryID = ""
 	w.productID = ""
 	w.subscriptionID = ""
 	w.userID = ""
-	w.tenantID = ""
+	w.selectedTenantID = ""
 
 	w.externalPaymentID = ""
 	w.originalExternalPaymentID = ""
@@ -227,6 +224,11 @@ func (w *WideEvent) MarshalZerologObject(e *zerolog.Event) {
 		Int("status", w.StatusCode).
 		Int64("latency_ms", w.LatencyMs)
 
+	// request_id is also sent to the client (X-Request-ID header), so a reported failure can be found.
+	if w.RequestID != "" {
+		e.Str("request_id", w.RequestID)
+	}
+
 	if w.Event != "" {
 		e.Str("event", w.Event)
 	}
@@ -246,8 +248,8 @@ func (w *WideEvent) MarshalZerologObject(e *zerolog.Event) {
 	if w.userID != "" {
 		e.Str("user_id", w.userID)
 	}
-	if w.tenantID != "" {
-		e.Str("tenant_id", w.tenantID)
+	if w.selectedTenantID != "" {
+		e.Str("selected_tenant_id", w.selectedTenantID)
 	}
 
 	if w.externalPaymentID != "" {

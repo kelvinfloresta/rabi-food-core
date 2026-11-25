@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Rabi-IT/rabi-food-core/app_context"
@@ -10,6 +11,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// scopedTokenTTL bounds how long a removed member keeps access: membership is checked when a token is
+// issued.
 const scopedTokenTTL = 30 * time.Minute
 
 type ExchangeTokenInput struct {
@@ -22,6 +25,7 @@ type ExchangeTokenOutput struct {
 	TokenType   string `json:"tokenType"`
 }
 
+// ExchangeToken issues a token for acting as a member of one tenant. Only its members get one.
 func (c *AuthCase) ExchangeToken(ctx context.Context, input *ExchangeTokenInput) (*ExchangeTokenOutput, error) {
 	session := app_context.GetSession(ctx)
 
@@ -54,7 +58,7 @@ func (c *AuthCase) ExchangeToken(ctx context.Context, input *ExchangeTokenInput)
 
 	signed, err := token.SignedString([]byte(config.AuthSecret))
 	if err != nil {
-		return nil, errs.ErrAuthServiceFailure
+		return nil, fmt.Errorf("%w: %w", errs.ErrScopedTokenSignFailed, err)
 	}
 
 	return &ExchangeTokenOutput{

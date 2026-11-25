@@ -41,6 +41,7 @@ func (a *Api) Start(t *testing.T) {
 		require.NoError(t, err, "could not start the test environment")
 	}
 
+	captureLogs()
 	buildInjector()
 	a.http = testHTTPServer
 	a.database = testDB

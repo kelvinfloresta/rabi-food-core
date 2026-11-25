@@ -13,6 +13,9 @@ var (
 	ErrSubscriptionStateVerificationFailed = newErr("SUBSCRIPTION_STATE_VERIFICATION_FAILED", http.StatusInternalServerError)
 )
 
+// ErrSubscriptionPatchWithoutFilter guards against an unfiltered UPDATE that would change every subscription.
+var ErrSubscriptionPatchWithoutFilter = newErr("SUBSCRIPTION_PATCH_WITHOUT_FILTER", http.StatusInternalServerError)
+
 func DuplicateProduct(productID string) *ApiError {
 	e := *ErrDuplicateProduct
 	e.Code = ErrDuplicateProduct.Code

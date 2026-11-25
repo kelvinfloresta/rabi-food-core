@@ -38,7 +38,7 @@ func Session(c *fiber.Ctx) error {
 	}
 
 	uctx := c.UserContext()
-	logger.GetWideEvent(uctx).ActorID = session.UserID
+	logger.GetWideEvent(uctx).SetUserID(session.UserID)
 
 	c.SetUserContext(app_context.WithSession(uctx, session))
 

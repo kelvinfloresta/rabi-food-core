@@ -5,8 +5,8 @@ import (
 
 	"github.com/Rabi-IT/rabi-food-core/app_context"
 	"github.com/Rabi-IT/rabi-food-core/features/order/gateway"
-	parser "github.com/Rabi-IT/rabi-food-core/libs/http/parser"
 	"github.com/Rabi-IT/rabi-food-core/libs/errs"
+	parser "github.com/Rabi-IT/rabi-food-core/libs/http/parser"
 	"github.com/Rabi-IT/rabi-food-core/libs/logger"
 
 	"github.com/gofiber/fiber/v2"
@@ -27,6 +27,7 @@ import (
 func (c *OrderController) Delete(ctx *fiber.Ctx) error {
 	filter := gateway.DeleteFilter{}
 
+	// TODO: verificar se é redundante e remover de outros locais também
 	err := parser.ParseBody(ctx, &filter)
 	if err != nil {
 		return ctx.JSON(err)

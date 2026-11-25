@@ -81,5 +81,30 @@ func (t *TestSuite) Test_AuthIntegration_ProtectedRouteToken() {
 	}
 }
 
+// The request log is what tells which tenant a customer was using when something failed.
+func (t *TestSuite) Test_AuthIntegration_RequestLog() {
+	t.Run("should log the tenant selected in the X-Tenant-ID header", func() {
+		tenant := fixtures.Tenant.Create(t.T(), nil)
+
+		requestID := fixtures.DefaultHTTP(t.T()).Request(http.MethodGet, "/category").
+			WithHeader("X-Tenant-ID", tenant.ID).
+			Expect().
+			Status(http.StatusOK).
+			Header("X-Request-ID").NotEmpty().Raw()
+
+		fields := fixtures.Logger.Request(t.T(), requestID)
+		t.Equal(tenant.ID, fields["selected_tenant_id"])
+	})
+
+	t.Run("should not log a selected tenant without the header", func() {
+		requestID := fixtures.DefaultHTTP(t.T()).Request(http.MethodGet, "/tenant/slug/unknown").
+			Expect().
+			Header("X-Request-ID").NotEmpty().Raw()
+
+		fields := fixtures.Logger.Request(t.T(), requestID)
+		t.NotContains(fields, "selected_tenant_id")
+	})
+}
+
 // foreignToken is a valid HS256 JWT signed with a key other than AUTH_SECRET.
 const foreignToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"

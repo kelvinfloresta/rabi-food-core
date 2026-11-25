@@ -31,6 +31,7 @@ func Logging() fiber.Handler {
 		if query != "" {
 			wd.Query = query
 		}
+		wd.SetSelectedTenantID(c.Get("X-Tenant-ID"))
 
 		c.SetUserContext(logger.WithWideEvent(uctx, wd))
 

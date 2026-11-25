@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -25,7 +24,10 @@ type RefreshScopedOutput struct {
 	TokenType    string `json:"tokenType"`
 }
 
+// RefreshScoped renews a token for acting as a member of a tenant, checking the membership again.
+// TODO: Dar um nome mais objetivo e descritivo para a função
 func (c *AuthCase) RefreshScoped(ctx context.Context, input *RefreshScopedInput) (*RefreshScopedOutput, error) {
+	// TODO: enviar erros melhores
 	out, err := c.gateway.RefreshToken(ctx, input.RefreshToken)
 	if err != nil {
 		return nil, err
@@ -33,7 +35,7 @@ func (c *AuthCase) RefreshScoped(ctx context.Context, input *RefreshScopedInput)
 
 	session, err := parseGoTrueToken(out.AccessToken)
 	if err != nil {
-		return nil, errs.ErrAuthServiceFailure
+		return nil, err
 	}
 
 	member, err := c.tenantCase.GetMembership(ctx, session.UserID, input.TenantID)
@@ -63,7 +65,7 @@ func (c *AuthCase) RefreshScoped(ctx context.Context, input *RefreshScopedInput)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(config.AuthSecret))
 	if err != nil {
-		return nil, errs.ErrAuthServiceFailure
+		return nil, fmt.Errorf("%w: %w", errs.ErrScopedTokenSignFailed, err)
 	}
 
 	return &RefreshScopedOutput{
@@ -80,12 +82,13 @@ func (c *AuthCase) RefreshScoped(ctx context.Context, input *RefreshScopedInput)
 func parseGoTrueToken(tokenStr string) (app_context.UserSession, error) {
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenStr, jwt.MapClaims{})
 	if err != nil {
-		return app_context.UserSession{}, err
+		return app_context.UserSession{}, fmt.Errorf("%w: parse GoTrue token: %w", errs.ErrAuthServiceFailure, err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return app_context.UserSession{}, errors.New("invalid claims")
+		return app_context.UserSession{}, fmt.Errorf("%w: GoTrue token claims are %T",
+			errs.ErrAuthServiceFailure, token.Claims)
 	}
 
 	appMeta, _ := claims["app_metadata"].(map[string]any)
