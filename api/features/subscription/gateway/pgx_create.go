@@ -63,7 +63,8 @@ func (g *PgxSubscriptionGatewayAdapter) BulkCreate(ctx context.Context, inputs [
 	ids := make([]string, 0, len(inputs))
 	for rows.Next() {
 		var id string
-		if err := rows.Scan(&id); err != nil {
+		err := rows.Scan(&id)
+		if err != nil {
 			return nil, err
 		}
 		ids = append(ids, id)

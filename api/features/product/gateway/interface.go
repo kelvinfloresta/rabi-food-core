@@ -36,11 +36,11 @@ type DiscountRule struct {
 }
 
 type ListOutput struct {
-	ID          string `db:"id"            json:"id"`
-	Name        string `db:"name"          json:"name"`
-	Description string `db:"description"   json:"description"`
-	Photo       string `db:"photo"         json:"photo"`
-	CategoryID  string `db:"category_id"   json:"categoryId"`
+	ID          string `db:"id"          json:"id"`
+	Name        string `db:"name"        json:"name"`
+	Description string `db:"description" json:"description"`
+	Photo       string `db:"photo"       json:"photo"`
+	CategoryID  string `db:"category_id" json:"categoryId"`
 	// CategoryName is only populated when ListFilter.WithCategoryName is true.
 	CategoryName  string         `db:"category_name"  json:"categoryName"`
 	Unit          string         `db:"unit"           json:"unit"`
@@ -102,14 +102,14 @@ type PaginateFilter struct {
 }
 
 type PaginateData struct {
-	ID            string         `db:"id"          json:"id"`
-	Name          string         `db:"name"        json:"name"`
-	Description   string         `db:"description" json:"description"`
-	Photo         string         `db:"photo"       json:"photo"`
-	CategoryID    string         `db:"category_id" json:"categoryId"`
-	Unit          string         `db:"unit"        json:"unit"`
-	Price         uint           `db:"price"       json:"price"`
-	IsActive      bool           `db:"is_active"   json:"isActive"`
+	ID            string         `db:"id"              json:"id"`
+	Name          string         `db:"name"            json:"name"`
+	Description   string         `db:"description"     json:"description"`
+	Photo         string         `db:"photo"           json:"photo"`
+	CategoryID    string         `db:"category_id"     json:"categoryId"`
+	Unit          string         `db:"unit"            json:"unit"`
+	Price         uint           `db:"price"           json:"price"`
+	IsActive      bool           `db:"is_active"       json:"isActive"`
 	DiscountRules []DiscountRule `json:"discountRules"`
 }
 

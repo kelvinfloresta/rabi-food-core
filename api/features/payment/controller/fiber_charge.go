@@ -13,8 +13,8 @@ import (
 )
 
 type chargeBody struct {
-	SubscriptionID    string `json:"subscriptionId"    validate:"required"`
-	PaymentToken string `json:"paymentToken"`
+	SubscriptionID string `json:"subscriptionId" validate:"required"`
+	PaymentToken   string `json:"paymentToken"`
 }
 
 type chargeResponse struct {
@@ -37,12 +37,12 @@ func (c *PaymentController) Charge(ctx *fiber.Ctx) error {
 	logger.GetWideEvent(uctx).Event = "payment-charge"
 
 	out, err := c.usecase.Charge(uctx, payment_usecases.ChargeInput{
-		SubscriptionID:    body.SubscriptionID,
-		PaymentToken: body.PaymentToken,
-		UserID:            session.UserID,
-		UserEmail:         session.Login,
-		UserName:          session.Name,
-		TenantID:          ctx.Get("X-Tenant-ID"),
+		SubscriptionID: body.SubscriptionID,
+		PaymentToken:   body.PaymentToken,
+		UserID:         session.UserID,
+		UserEmail:      session.Login,
+		UserName:       session.Name,
+		TenantID:       ctx.Get("X-Tenant-ID"),
 	})
 
 	if errors.Is(err, errs.ErrPaymentRequiresAction) {

@@ -43,6 +43,7 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 		if e.Code == fiber.StatusUnauthorized {
 			return ctx.Status(fiber.StatusUnauthorized).Type("json").Send(errBodyInvalidToken)
 		}
+
 		return ctx.Status(e.Code).Type("json").Send(errBodyInternalError)
 	}
 

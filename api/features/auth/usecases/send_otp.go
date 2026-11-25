@@ -40,5 +40,6 @@ func (c *AuthCase) SendOTP(ctx context.Context, input *SendOTPInput) error {
 func randomPassword() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
+
 	return hex.EncodeToString(b)
 }

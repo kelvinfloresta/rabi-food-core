@@ -59,6 +59,7 @@ func (c *SubscriptionCase) handleNotConfirmedSubscription(ctx context.Context, i
 
 	if found != nil && found.PaymentStatus == payment_status.StatusPaid {
 		wd.MarkPaymentIdempotent()
+
 		return nil
 	}
 

@@ -62,9 +62,9 @@ type GetByIDFilter struct {
 }
 
 type GetByIDOutput struct {
-	ID                  string              `db:"id"                   json:"id"`
-	TenantID            string              `db:"tenant_id"            json:"tenantId"`
-	UserID              string              `db:"user_id"              json:"userId"`
+	ID        string              `db:"id"         json:"id"`
+	TenantID  string              `db:"tenant_id"  json:"tenantId"`
+	UserID    string              `db:"user_id"    json:"userId"`
 	Status    subscription.Status `db:"status"     json:"status"`
 	ProductID string              `db:"product_id" json:"productId"`
 	Quantity  uint16              `db:"quantity"   json:"quantity"`

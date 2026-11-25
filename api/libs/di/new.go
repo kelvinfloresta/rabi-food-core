@@ -190,6 +190,7 @@ func newInjector(dbConfig *config.DatabaseConfig) *do.Injector {
 	// Payment dependencies
 	do.Provide(injector, func(i *do.Injector) (payment_gateway.PaymentGateway, error) {
 		auth := do.MustInvoke[auth_gateway.AuthGateway](i)
+
 		return payment_gateway.NewStripe(auth), nil
 	})
 

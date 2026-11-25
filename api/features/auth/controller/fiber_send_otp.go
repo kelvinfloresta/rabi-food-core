@@ -12,18 +12,21 @@ import (
 
 func (c *AuthController) SendOTP(ctx *fiber.Ctx) error {
 	data := &usecases.SendOTPInput{}
-	if err := ctx.BodyParser(data); err != nil {
+	err := ctx.BodyParser(data)
+	if err != nil {
 		return ctx.JSON(err)
 	}
 
-	if err := validator.V.Struct(data); err != nil {
+	err = validator.V.Struct(data)
+	if err != nil {
 		return err
 	}
 
 	uctx := ctx.UserContext()
 	logger.GetWideEvent(uctx).Event = "auth-send-otp"
 
-	if err := c.usecase.SendOTP(uctx, data); err != nil {
+	err = c.usecase.SendOTP(uctx, data)
+	if err != nil {
 		return err
 	}
 

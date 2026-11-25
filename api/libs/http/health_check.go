@@ -35,12 +35,14 @@ func (h *HealthCheck) Handle(c *fiber.Ctx) error {
 
 	unavailable := []string{}
 
-	if err := probe(ctx, h.db.Ping); err != nil {
+	err := probe(ctx, h.db.Ping)
+	if err != nil {
 		logger.Get(ctx).Error().Err(err).Msg("health check failed: database")
 		unavailable = append(unavailable, "database")
 	}
 
-	if err := probe(ctx, h.auth.Health); err != nil {
+	err = probe(ctx, h.auth.Health)
+	if err != nil {
 		logger.Get(ctx).Error().Err(err).Msg("health check failed: auth")
 		unavailable = append(unavailable, "auth")
 	}
