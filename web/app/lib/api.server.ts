@@ -19,6 +19,9 @@ function authHeader(token?: string): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+// TODO: when the web starts calling POST /auth/signup, handle the SIGNUP_SIGNIN_FAILED code.
+// It means the account WAS created and only the automatic sign-in failed: tell the user the
+// sign-up succeeded and send them to sign in, instead of showing a generic sign-up error.
 function normalizeError(error: unknown): Result<never> {
   if (!axios.isAxiosError(error) || !error.response) return err("UNKNOWN")
 

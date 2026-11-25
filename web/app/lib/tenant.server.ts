@@ -1,13 +1,12 @@
 import { apiClient } from "~/lib/api.server"
-import type { Result } from "./result"
 
 const DASHBOARD_SLUGS = new Set(["app", "www"])
 
 export type Tenant = {
-  id: string
-  name: string
-  slug: string
-  language: string
+  readonly id: string
+  readonly name: string
+  readonly slug: string
+  readonly language: string
 }
 
 export function getTenantSlug(request: Request): string | null {
@@ -19,7 +18,7 @@ export function getTenantSlug(request: Request): string | null {
   const slug = host.slice(0, indexOfDot)
 
   // bare localhost or app.* subdomain → dashboard
-  if (slug === "localhost" || DASHBOARD_SLUGS.has(slug)) {
+  if (DASHBOARD_SLUGS.has(slug)) {
     return null
   }
 
