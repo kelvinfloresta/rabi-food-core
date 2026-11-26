@@ -14,6 +14,7 @@ Feature-based modular monolith: `api/features/<feature>/{controller,gateway,rout
 ## Boundaries
 - Business logic lives in use cases only — not in controllers, not in gateways.
 - Imports between features must be one-directional and intentional. If an import direction looks wrong, the modeling is wrong; do not hide it behind an interface. Known violation: `payment` and `subscription` depend on each other — do not add to it.
+- Never call a use case in a loop when the items must succeed or fail together: each call commits on its own, so a failure halfway leaves part of the batch written. Make the batch one use case whose gateway writes it in one transaction.
 - A local interface for another feature's use case only when isolated testability is an explicit requirement; otherwise import the concrete type.
 - New services are registered in `libs/di/new.go` with `do.Provide`. Adapters copy `config` values when created, so nothing may build the injector before config is final (tests override config in `fixtures/environment.go`).
 
@@ -29,12 +30,6 @@ Feature-based modular monolith: `api/features/<feature>/{controller,gateway,rout
 - The log keeps the two tenants apart: `selected_tenant_id` is the tenant a customer selected (`X-Tenant-ID` header), `member_tenant_id` the tenant a member acts for (member token).
 - Token failures (missing, malformed, invalid) are always `401 INVALID_TOKEN`, via the jwtware `ErrorHandler` in `libs/http/fiber_adapter.go`.
 - SQL is built with squirrel/placeholders, never by string concatenation.
-
-## Errors
-- Domain errors are `*errs.ApiError` declared in `libs/errs/<feature>_error.go` via `newErr(CODE, status)`. `errors.New` in `features/` fails the lint (forbidigo).
-- Wrap a cause as `fmt.Errorf("%w: %w", errs.ErrX, err)`, ApiError first: the first ApiError in the chain is the response code and the `error_code` log field. Never return `errs.ErrX` in place of `err` (the log loses the cause).
-- Every failure path gets its own code, internal ones included (500, e.g. `SUBSCRIPTION_STATE_VERIFICATION_FAILED`), so `error_code` identifies it in the logs. `INTERNAL_ERROR` is only the fallback for errors nobody anticipated — never wrap `errs.ErrInternal` on purpose.
-- Compare errors with `errors.Is` / `errors.As`.
 
 ## Handlers
 - Parse, then `validator.V.Struct(data)`, then set `logger.GetWideEvent(uctx).Event = "<verb>-<entity>"`, then call the use case. Some read handlers still miss the WideEvent event — add it when touching them.

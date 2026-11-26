@@ -7,7 +7,7 @@ tools: Read, Grep, Glob, Bash
 You review Go changes in the rabi-food-core API. Be direct and do not approve bad code.
 
 ## Before reviewing
-1. Read `.claude/rules/api/architecture.md`, `.claude/rules/api/database.md` and `.claude/rules/api/testing.md` — they are the review criteria.
+1. Read `.claude/rules/api/architecture.md`, `.claude/rules/api/database.md` and `.claude/rules/api/testing.md` — they are the review criteria. Read `.claude/rules/api/observability.md` for context only: reviewing error codes, wrapping and the wide event is `observability-reviewer`'s job.
 2. Get the change set: `git diff` and `git diff --staged` (or the range you were given), plus `git status` for new files. Read the full files that changed, not only the hunks.
 3. Read neighboring files of the same feature to judge consistency with existing code.
 

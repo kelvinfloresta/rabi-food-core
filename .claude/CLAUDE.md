@@ -17,7 +17,7 @@ Comments state the purpose of the code. Leave out what can change while the purp
 - **Features:** plan first (plan mode), iterate on one plan, then implement. No spec/plan/tasks document hierarchy.
 - **Small changes and bugfixes:** implement directly.
 - **Product and architecture decisions** with lasting consequences (product rules and their reasons, feature boundaries, new infrastructure, cross-cutting patterns): record a short decision in `docs/decisions/` — see the template there.
-- **Before committing:** run the checks of the affected subproject (listed in its rules) and ask the `api-reviewer` or `web-reviewer` subagent for a review.
+- **Before committing:** run the checks of the affected subproject (listed in its rules) and ask `api-reviewer` and `observability-reviewer` (for `api/`) or `web-reviewer` (for `web/`) for a review.
 
 ## Where instructions live
 - `.claude/rules/` — conventions, scoped with `paths:` so they load only for matching files.
