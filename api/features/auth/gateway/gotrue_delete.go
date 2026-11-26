@@ -11,14 +11,14 @@ import (
 func (g *GoTrueGatewayAdapter) Delete(ctx context.Context, id string) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, g.baseURL+"/admin/users/"+id, nil)
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return false, fmt.Errorf("%w: %w", errs.ErrAuthUserDeleteFailed, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+g.serviceKey)
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return false, fmt.Errorf("%w: %w", errs.ErrAuthUserDeleteFailed, err)
 	}
 	defer resp.Body.Close()
 
@@ -27,7 +27,7 @@ func (g *GoTrueGatewayAdapter) Delete(ctx context.Context, id string) (bool, err
 	}
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return false, wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return false, wrapResponseError(errs.ErrAuthUserDeleteFailed, resp)
 	}
 
 	return true, nil

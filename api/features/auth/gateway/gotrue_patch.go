@@ -28,7 +28,7 @@ func (g *GoTrueGatewayAdapter) Patch(ctx context.Context, id string, input Patch
 	if len(appMeta) > 0 {
 		data, err := json.Marshal(appMeta)
 		if err != nil {
-			return false, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+			return false, fmt.Errorf("%w: %w", errs.ErrAuthUserPatchFailed, err)
 		}
 		qb = qb.Set("raw_app_meta_data", sq.Expr("raw_app_meta_data || ?::jsonb", string(data)))
 	}
@@ -69,19 +69,19 @@ func (g *GoTrueGatewayAdapter) Patch(ctx context.Context, id string, input Patch
 	if len(userMeta) > 0 {
 		data, err := json.Marshal(userMeta)
 		if err != nil {
-			return false, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+			return false, fmt.Errorf("%w: %w", errs.ErrAuthUserPatchFailed, err)
 		}
 		qb = qb.Set("raw_user_meta_data", sq.Expr("raw_user_meta_data || ?::jsonb", string(data)))
 	}
 
 	sql, args, err := qb.ToSql()
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return false, fmt.Errorf("%w: %w", errs.ErrAuthUserPatchFailed, err)
 	}
 
 	tag, err := g.db.Pool.Exec(context.WithoutCancel(ctx), sql, args...)
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return false, fmt.Errorf("%w: %w", errs.ErrAuthUserPatchFailed, err)
 	}
 
 	return tag.RowsAffected() > 0, nil

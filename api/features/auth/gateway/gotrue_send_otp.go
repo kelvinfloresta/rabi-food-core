@@ -24,12 +24,12 @@ func (g *GoTrueGatewayAdapter) SendOTP(ctx context.Context, input SendOTPInput) 
 
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return fmt.Errorf("%w: %w", errs.ErrAuthOTPSendFailed, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.baseURL+"/otp", bytes.NewReader(raw))
 	if err != nil {
-		return fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return fmt.Errorf("%w: %w", errs.ErrAuthOTPSendFailed, err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -37,12 +37,12 @@ func (g *GoTrueGatewayAdapter) SendOTP(ctx context.Context, input SendOTPInput) 
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return fmt.Errorf("%w: %w", errs.ErrAuthOTPSendFailed, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return wrapResponseError(errs.ErrAuthOTPSendFailed, resp)
 	}
 
 	return nil

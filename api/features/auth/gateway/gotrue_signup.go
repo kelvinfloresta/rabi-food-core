@@ -44,12 +44,12 @@ func (g *GoTrueGatewayAdapter) CreateUser(ctx context.Context, input CreateUserI
 
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserCreateFailed, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.baseURL+"/admin/users", bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserCreateFailed, err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -57,7 +57,7 @@ func (g *GoTrueGatewayAdapter) CreateUser(ctx context.Context, input CreateUserI
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserCreateFailed, err)
 	}
 	defer resp.Body.Close()
 
@@ -66,16 +66,17 @@ func (g *GoTrueGatewayAdapter) CreateUser(ctx context.Context, input CreateUserI
 		if strings.Contains(string(body), "email_exists") {
 			return nil, errs.ErrUserAlreadyExists
 		}
-		return nil, fmt.Errorf("%w: status=422 body=%s", errs.ErrAuthServiceFailure, body)
+
+		return nil, fmt.Errorf("%w: status=422 body=%s", errs.ErrAuthUserCreateFailed, body)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return nil, wrapResponseError(errs.ErrAuthUserCreateFailed, resp)
 	}
 
 	var result CreateUserOutput
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserCreateFailed, err)
 	}
 
 	return &result, nil

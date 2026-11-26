@@ -25,9 +25,9 @@ type RefreshScopedOutput struct {
 }
 
 // RefreshScoped renews a token for acting as a member of a tenant, checking the membership again.
-// TODO: Dar um nome mais objetivo e descritivo para a função
+// TODO: give the function a clearer, more descriptive name.
 func (c *AuthCase) RefreshScoped(ctx context.Context, input *RefreshScopedInput) (*RefreshScopedOutput, error) {
-	// TODO: enviar erros melhores
+	// TODO: return more specific errors.
 	out, err := c.gateway.RefreshToken(ctx, input.RefreshToken)
 	if err != nil {
 		return nil, err
@@ -82,13 +82,13 @@ func (c *AuthCase) RefreshScoped(ctx context.Context, input *RefreshScopedInput)
 func parseGoTrueToken(tokenStr string) (app_context.UserSession, error) {
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenStr, jwt.MapClaims{})
 	if err != nil {
-		return app_context.UserSession{}, fmt.Errorf("%w: parse GoTrue token: %w", errs.ErrAuthServiceFailure, err)
+		return app_context.UserSession{}, fmt.Errorf("%w: parse GoTrue token: %w", errs.ErrAuthTokenParseFailed, err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return app_context.UserSession{}, fmt.Errorf("%w: GoTrue token claims are %T",
-			errs.ErrAuthServiceFailure, token.Claims)
+			errs.ErrAuthTokenParseFailed, token.Claims)
 	}
 
 	appMeta, _ := claims["app_metadata"].(map[string]any)

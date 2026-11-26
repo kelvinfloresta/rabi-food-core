@@ -20,12 +20,12 @@ func (g *GoTrueGatewayAdapter) SignIn(ctx context.Context, input SignInInput) (*
 
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthSignInFailed, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.baseURL+"/token?grant_type=password", bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthSignInFailed, err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -33,7 +33,7 @@ func (g *GoTrueGatewayAdapter) SignIn(ctx context.Context, input SignInInput) (*
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthSignInFailed, err)
 	}
 	defer resp.Body.Close()
 
@@ -42,12 +42,12 @@ func (g *GoTrueGatewayAdapter) SignIn(ctx context.Context, input SignInInput) (*
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return nil, wrapResponseError(errs.ErrAuthSignInFailed, resp)
 	}
 
 	var result TokenOutput
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthSignInFailed, err)
 	}
 
 	return &result, nil

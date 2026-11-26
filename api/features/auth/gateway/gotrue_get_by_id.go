@@ -52,14 +52,14 @@ func stringVal(m map[string]any, key string) string {
 func (g *GoTrueGatewayAdapter) GetByID(ctx context.Context, id string) (*UserOutput, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.baseURL+"/admin/users/"+id, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserGetFailed, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+g.serviceKey)
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserGetFailed, err)
 	}
 	defer resp.Body.Close()
 
@@ -68,12 +68,12 @@ func (g *GoTrueGatewayAdapter) GetByID(ctx context.Context, id string) (*UserOut
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return nil, wrapResponseError(errs.ErrAuthUserGetFailed, resp)
 	}
 
 	var result adminUserResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthUserGetFailed, err)
 	}
 
 	return result.toUserOutput(), nil

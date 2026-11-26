@@ -19,12 +19,12 @@ func (g *GoTrueGatewayAdapter) RefreshToken(ctx context.Context, refreshToken st
 
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthRefreshFailed, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.baseURL+"/token?grant_type=refresh_token", bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthRefreshFailed, err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -32,7 +32,7 @@ func (g *GoTrueGatewayAdapter) RefreshToken(ctx context.Context, refreshToken st
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthRefreshFailed, err)
 	}
 	defer resp.Body.Close()
 
@@ -41,12 +41,12 @@ func (g *GoTrueGatewayAdapter) RefreshToken(ctx context.Context, refreshToken st
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return nil, wrapResponseError(errs.ErrAuthRefreshFailed, resp)
 	}
 
 	var result TokenOutput
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthRefreshFailed, err)
 	}
 
 	return &result, nil

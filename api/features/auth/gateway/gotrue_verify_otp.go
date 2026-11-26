@@ -25,12 +25,12 @@ func (g *GoTrueGatewayAdapter) VerifyOTP(ctx context.Context, input VerifyOTPInp
 
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthOTPVerifyFailed, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.baseURL+"/verify", bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthOTPVerifyFailed, err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -38,7 +38,7 @@ func (g *GoTrueGatewayAdapter) VerifyOTP(ctx context.Context, input VerifyOTPInp
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthOTPVerifyFailed, err)
 	}
 	defer resp.Body.Close()
 
@@ -47,12 +47,12 @@ func (g *GoTrueGatewayAdapter) VerifyOTP(ctx context.Context, input VerifyOTPInp
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, wrapResponseError(errs.ErrAuthServiceFailure, resp)
+		return nil, wrapResponseError(errs.ErrAuthOTPVerifyFailed, resp)
 	}
 
 	var result TokenOutput
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("%w: %w", errs.ErrAuthServiceFailure, err)
+		return nil, fmt.Errorf("%w: %w", errs.ErrAuthOTPVerifyFailed, err)
 	}
 
 	return &result, nil
