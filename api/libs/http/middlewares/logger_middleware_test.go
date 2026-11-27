@@ -24,7 +24,7 @@ type errorResponse struct {
 	Code string `json:"code"`
 }
 
-// classifyCode feeds the error_code log field, so it must be the code the client receives, and it must
+// classifyCode feeds the error.type log field, so it must be the code the client receives, and it must
 // never be empty for a failed request.
 func Test_ClassifyCode(t *testing.T) {
 	cases := map[string]struct {

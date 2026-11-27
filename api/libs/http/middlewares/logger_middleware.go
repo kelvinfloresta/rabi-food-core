@@ -99,7 +99,7 @@ func classifyStatus(err error) int {
 }
 
 // classifyCode mirrors the ErrorHandler logic to determine the error code sent to the client.
-// It feeds the error_code log field, which must stay low-cardinality: never put IDs or messages in it.
+// It feeds the error.type log field, which must stay low-cardinality: never put IDs or messages in it.
 func classifyCode(err error) string {
 	var validationErr validator.ValidationErrors
 	if errors.As(err, &validationErr) {

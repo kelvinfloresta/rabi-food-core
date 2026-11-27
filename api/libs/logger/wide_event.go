@@ -7,6 +7,7 @@ import (
 
 	"github.com/Rabi-IT/rabi-food-core/libs/errs"
 	"github.com/rs/zerolog"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 )
 
 const wideEventKey = "wideEventKey"
@@ -55,6 +56,9 @@ type WideEvent struct {
 
 	err       string
 	errorCode string
+	// dbCause is set when the database caused the error; dbSQLState only when the database answered.
+	dbCause    bool
+	dbSQLState string
 }
 
 // --- Usecase setters (thread-safe) ---
@@ -165,6 +169,7 @@ func (w *WideEvent) FinishRequest(statusCode int, errorCode string, err error, l
 	w.errorCode = errorCode
 	if err != nil {
 		w.err = err.Error()
+		w.recordCause(err)
 	}
 }
 
@@ -179,6 +184,7 @@ func (w *WideEvent) FinishCronJob(err error, latencyMs int64) {
 		if apiError, ok := errors.AsType[*errs.ApiError](err); ok {
 			w.errorCode = apiError.Code
 		}
+		w.recordCause(err)
 	}
 }
 
@@ -219,6 +225,8 @@ func (w *WideEvent) reset() {
 
 	w.err = ""
 	w.errorCode = ""
+	w.dbCause = false
+	w.dbSQLState = ""
 }
 
 func (w *WideEvent) MarshalZerologObject(e *zerolog.Event) {
@@ -297,12 +305,25 @@ func (w *WideEvent) MarshalZerologObject(e *zerolog.Event) {
 		}
 	}
 
-	if w.err != "" {
-		e.Str("error", w.err)
-	}
+	// Error fields use the OpenTelemetry names, so they map to span attributes as they are.
 	if w.errorCode != "" {
-		e.Str("error_code", w.errorCode)
+		e.Str(string(semconv.ErrorTypeKey), w.errorCode)
 	}
+	if w.err != "" {
+		e.Str(string(semconv.ExceptionMessageKey), w.err)
+	}
+	if w.dbCause {
+		e.Str(string(semconv.DBSystemNameKey), semconv.DBSystemNamePostgreSQL.Value.AsString())
+		if w.dbSQLState != "" {
+			e.Str(string(semconv.DBResponseStatusCodeKey), w.dbSQLState)
+		}
+	}
+}
+
+// recordCause records where the error came from, read from the chain so no gateway has to report it.
+// The caller holds the lock.
+func (w *WideEvent) recordCause(err error) {
+	w.dbSQLState, w.dbCause = errs.DatabaseErrorInfo(err)
 }
 
 var wideEventPool = sync.Pool{

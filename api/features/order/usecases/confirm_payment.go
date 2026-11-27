@@ -41,7 +41,7 @@ func (c *OrderCase) ConfirmPayment(ctx context.Context, in ConfirmPaymentInput) 
 
 	if err != nil {
 		if errs.IsUniqueViolation(err) {
-			return false, errs.ErrConflict
+			return false, fmt.Errorf("%w: %w", errs.ErrConflict, err)
 		}
 
 		return false, err

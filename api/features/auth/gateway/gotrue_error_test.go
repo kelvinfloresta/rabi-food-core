@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Each auth service operation fails with its own code, so error_code in the log tells which one failed.
+// Each auth service operation fails with its own code, so error.type in the log tells which one failed.
 func TestGoTrueGateway_ServiceFailureCodes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

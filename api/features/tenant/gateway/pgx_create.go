@@ -2,6 +2,9 @@ package gateway
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/Rabi-IT/rabi-food-core/libs/errs"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -17,19 +20,7 @@ func (g *PgxTenantGatewayAdapter) Create(ctx context.Context, input CreateInput)
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return "", err
-	}
-
-	wctx := context.WithoutCancel(ctx)
-
-	tx, err := g.DB.Pool.Begin(wctx)
-	if err != nil {
-		return "", err
-	}
-	defer tx.Rollback(context.Background())
-
-	if _, err = tx.Exec(wctx, tenantSQL, tenantArgs...); err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: build tenant insert: %w", errs.ErrTenantCreateFailed, err)
 	}
 
 	memberSQL, memberArgs, err := sq.
@@ -40,12 +31,34 @@ func (g *PgxTenantGatewayAdapter) Create(ctx context.Context, input CreateInput)
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: build member insert: %w", errs.ErrTenantMemberCreateFailed, err)
 	}
 
-	if _, err = tx.Exec(wctx, memberSQL, memberArgs...); err != nil {
-		return "", err
+	wctx := context.WithoutCancel(ctx)
+
+	tx, err := g.DB.Pool.Begin(wctx)
+	if err != nil {
+		return "", fmt.Errorf("%w: begin: %w", errs.ErrTenantCreateFailed, err)
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(wctx, tenantSQL, tenantArgs...)
+	if errs.IsUniqueViolation(err) {
+		return "", fmt.Errorf("%w: %w", errs.ErrTenantSlugTaken, err)
+	}
+	if err != nil {
+		return "", fmt.Errorf("%w: insert tenant: %w", errs.ErrTenantCreateFailed, err)
 	}
 
-	return id, tx.Commit(wctx)
+	_, err = tx.Exec(wctx, memberSQL, memberArgs...)
+	if err != nil {
+		return "", fmt.Errorf("%w: insert member: %w", errs.ErrTenantMemberCreateFailed, err)
+	}
+
+	err = tx.Commit(wctx)
+	if err != nil {
+		return "", fmt.Errorf("%w: commit: %w", errs.ErrTenantCreateFailed, err)
+	}
+
+	return id, nil
 }

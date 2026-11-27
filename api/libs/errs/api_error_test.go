@@ -16,7 +16,7 @@ type status string
 func (s status) String() string { return string(s) }
 
 // Every constructor must keep errors.Is working against its base error, and keep Code equal to the
-// base Code: Code feeds the error_code log field, so variations (IDs, statuses) belong in FullCode.
+// base Code: Code feeds the error.type log field, so variations (IDs, statuses) belong in FullCode.
 func Test_ApiErrorConstructors(t *testing.T) {
 	cases := map[string]struct {
 		err  error

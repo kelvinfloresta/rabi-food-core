@@ -34,7 +34,7 @@ linters:
         # Scoped to features/ by the exclusions below.
         - pattern: ^errors\.New$
           msg: >-
-            errors are errs.ApiError declared in libs/errs, one code per failure so error_code identifies
+            errors are errs.ApiError declared in libs/errs, one code per failure so error.type identifies
             it; wrap a cause with fmt.Errorf("%w: %w", errs.ErrX, err)
     depguard:
       # Implementation libraries stay behind the project's own packages, so code (and AI) use the
@@ -48,6 +48,14 @@ linters:
           deny:
             - pkg: github.com/rs/zerolog
               desc: use libs/logger; to check log output in tests, use fixtures.Logger
+        semconv:
+          # Log field names are mapped to OpenTelemetry names in one place, the wide event.
+          files:
+            - $all
+            - "!**/libs/logger/**"
+          deny:
+            - pkg: go.opentelemetry.io/otel/semconv
+              desc: log field names are set only in libs/logger (WideEvent)
         logger-tests:
           # libs/logger may use zerolog, but its tests must go through the production logger.
           files:
