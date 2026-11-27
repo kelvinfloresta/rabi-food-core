@@ -1,0 +1,45 @@
+# Runs the API in a container next to the same Alloy pipeline as production (config.alloy), shipping to
+# Grafana Cloud with env=local. Start it with `task observe`; credentials go in .env.monitoring.
+name: rabi-food-observe
+
+services:
+  api:
+    build: ../../api
+    env_file: ../../.env.test
+    environment:
+      LOG_FORMAT: json
+      DATABASE_HOST: postgres
+      GOTRUE_URL: http://gotrue:9999
+    ports:
+      - "3000:3000"
+    networks:
+      - test
+
+  alloy:
+    image: grafana/alloy:v1.14.0 # keep in sync with infra/terraform/ecs.tf and Taskfile.yml
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    ports:
+      - "12345:12345" # Alloy UI: what was discovered and where each line went
+    env_file: .env.monitoring
+    environment:
+      ENVIRONMENT: local
+      LOG_CONTAINER_FILTER: com.docker.compose.project=rabi-food-observe
+      LOG_SERVICES: api
+      API_METRICS_TARGET: api:3000
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy
+    networks:
+      - test
+
+volumes:
+  alloy-data:
+
+networks:
+  test:
+    external: true

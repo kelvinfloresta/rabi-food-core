@@ -1,6 +1,34 @@
 # This file is maintained automatically by "terraform init".
 # Manual edits may be lost in future updates.
 
+provider "registry.terraform.io/grafana/grafana" {
+  version     = "3.25.9"
+  constraints = "~> 3.0"
+  hashes = [
+    "h1:m19AUS7s6DUOawfYD4OSEXVqxjp7OG/i8ArjcxCDIW0=",
+    "zh:052dd83cbf794d6a0c41ef6262286063d64c7b2107f3a6b1b81e679303072759",
+    "zh:117092dfc73619621eb48046934ef14c09e4419fc6d5bab35bff7549eac905fb",
+    "zh:153952d2f01812cada014905852c8a03fb68a204b98a533b81830e923bf69848",
+    "zh:16e9ada001398329ebe0c28be26cb3b71d8a30bd4cc41aa94ec182d671a06b58",
+    "zh:1eab3a56da8bb9478b0b32e87c3210b82d937d6a9586bd64046840f48486f7a1",
+    "zh:2e92818816fbac9e52a00d7c2c94b529b2fccdcfcd712c0fef8f4b340658c6ad",
+    "zh:3518f1973b3942ef380574a6765835204970f39c635b7e1dacde5e2c6a9abf16",
+    "zh:3ec8c054b91d44cb103ec82484e0974360ad9d4167e035cbfba0c858613f46f1",
+    "zh:418418c9d9e3e30e6e065d00956c56f78873546ad2c7d52a5fddb3ead207f4f7",
+    "zh:50009c4adbfe2174984f9c80627eb37c629b2b756acfd79f09b6dde7c6e58c60",
+    "zh:5482ea23403676f691d765d644519cbb632b1b5c1cfa6f3115705a0512d7d2db",
+    "zh:55b45e72ff7f186f91e3134eb925718b1e7b3e32aa5c810888f6be1db7242cf4",
+    "zh:577cc62c2e5e2b6c9eda49c316931318f106b7cbf2f59727d20a16c8a1902637",
+    "zh:63d43991044566879304f153ef3a1ae50cc4301508888a230462259aac97c7a2",
+    "zh:76074d9d200c59c707f570603b7b447b48d38ce57b53b54ee921c45b6521d816",
+    "zh:81141dd99b77fd091f1bd86fff15e6a25abfd92c825e77439457a6eba027f27c",
+    "zh:a3db02539d1417e326cee4e70ed77bce37bc4586f98b7067a0653e7b608d0cc9",
+    "zh:a53a7c400f3d8cef527897a95bd4e559e306703706d1dae509963d42423ef006",
+    "zh:d6b4f270ea3a27542fea8af45323428452563191929e13d3d92a64365dca1694",
+    "zh:fffaf801f26a13d5a600d6f39f508e7c07ed09e7dd35fc3541d8066236348b6f",
+  ]
+}
+
 provider "registry.terraform.io/hashicorp/aws" {
   version     = "5.100.0"
   constraints = "~> 5.0"
@@ -21,5 +49,27 @@ provider "registry.terraform.io/hashicorp/aws" {
     "zh:f0ddf0eaf052766cfe09dea8200a946519f653c384ab4336e2a4a64fdd6310e9",
     "zh:f1b7e684f4c7ae1eed272b6de7d2049bb87a0275cb04dbb7cda6636f600699c9",
     "zh:ff461571e3f233699bf690db319dfe46aec75e58726636a0d97dd9ac6e32fb70",
+  ]
+}
+
+provider "registry.terraform.io/lukasaron/stripe" {
+  version     = "1.9.6"
+  constraints = "~> 1.0"
+  hashes = [
+    "h1:NOOGKkhSLbkIypc6+wmRh6cKP4ZpjIrYWmX/jIyyUTs=",
+    "zh:12e9d15a4605bd71dd470fb0c1adb2c17b82a0c45e73faa7778842aaaca87d16",
+    "zh:36f0afc40c1ef36babec6b269e1f975bb9a62f733069908da9df19284fbadc14",
+    "zh:55d55f8e24ab25a22fd8faf628971c41b7c55d63440bbcc50a0ee821e7a485fc",
+    "zh:662fb3a7c0acaadb2abf7b568adfea0f970067f7bbcc3f0e520929f93e7a2529",
+    "zh:708a49d29ec615a003143f397c9edac5dca7671a85b5ebe440dd2f11f719ad84",
+    "zh:7a13f35daf7872f70667737971a465a2c926bc0e9e7be431687744535d7daa6f",
+    "zh:984e7e9f6843e4bc39646b92a28d98d23dadefba10c04518fd0ce06b656576a4",
+    "zh:9c9496748baa1e9f0a890b4aafc31a7f2b89bcf1a98d63ac38178d44020a78e6",
+    "zh:a10150c78864865f8804e4e834968ae9c5682546985bfc6b39371d168a42591c",
+    "zh:a6aa6eef2c7ff0a54ac7688afbfb5b4e761db5e5e5e249e0906041b8a45ded97",
+    "zh:b1ebff09dea8a0d393613ec78e400613a011ee42c6e11f3f1ce3de36dc038529",
+    "zh:be015bc99630eb5947ef9c4e6bbf4de1231cf81bfed666212d465401e7f53d20",
+    "zh:f9a4d551623651155b6ba9e9910fa4e46b2dc165b97282648a06df9a082825ff",
+    "zh:fe4398a6088eb56cb58229dad4cf2c9c7cde2060957cc6927875a674618828f8",
   ]
 }

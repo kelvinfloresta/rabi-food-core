@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Rabi-IT/rabi-food-core/config"
@@ -21,7 +22,12 @@ func init() {
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	base = NewWithOutput(os.Stdout, config.Env == "production")
+	json, formatValid := writesJSON()
+	base = NewWithOutput(os.Stdout, json)
+	if !formatValid {
+		// Like LOG_LEVEL: a typo keeps the environment's default and says so.
+		base.Warn().Str("log_format", config.LogFormat).Msg("invalid LOG_FORMAT, using the environment default")
+	}
 
 	level, err := zerolog.ParseLevel(config.LogLevel)
 	if err != nil || level == zerolog.NoLevel {
@@ -33,10 +39,25 @@ func init() {
 	zerolog.SetGlobalLevel(level)
 }
 
-// NewWithOutput builds the application logger writing to out. Production writes JSON; other environments
-// write readable text. The app uses it once, for os.Stdout; tests use it to capture the production log.
-func NewWithOutput(out io.Writer, production bool) zerolog.Logger {
-	if production {
+// writesJSON reports whether the logs are written as JSON lines, the format the log pipeline parses, and
+// whether LOG_FORMAT was a known value.
+func writesJSON() (bool, bool) {
+	switch strings.ToLower(config.LogFormat) {
+	case "json":
+		return true, true
+	case "text":
+		return false, true
+	case "":
+		return config.Env.IsProduction(), true
+	default:
+		return config.Env.IsProduction(), false
+	}
+}
+
+// NewWithOutput builds the application logger writing to out: JSON lines, the format the log pipeline parses,
+// or readable text. The app uses it once, for os.Stdout; tests use it to capture the production log.
+func NewWithOutput(out io.Writer, json bool) zerolog.Logger {
+	if json {
 		return newLogger(out)
 	}
 

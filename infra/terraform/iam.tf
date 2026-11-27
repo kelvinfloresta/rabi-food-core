@@ -24,12 +24,15 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
+      Effect = "Allow"
+      Action = ["secretsmanager:GetSecretValue"]
       Resource = [
         aws_secretsmanager_secret.db_password.arn,
         aws_secretsmanager_secret.auth_secret.arn,
         aws_secretsmanager_secret.grafana_token.arn,
+        aws_secretsmanager_secret.gotrue_service_key.arn,
+        aws_secretsmanager_secret.gotrue_db_url.arn,
+        aws_secretsmanager_secret.grafana_pdc_token.arn,
       ]
     }]
   })

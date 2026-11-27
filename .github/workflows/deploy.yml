@@ -74,3 +74,26 @@ jobs:
           NEW_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" \
             --query 'taskDefinition.taskDefinitionArn' --output text)
           aws ecs update-service --cluster rabi-food --service rabi-food-api --task-definition $NEW_ARN
+
+      # The dashboards' login: analytics_reader comes from the migrations, the password from Terraform's secret.
+      # After the ECS update, so a failure here never holds back the release.
+      - name: Grant the dashboards' database user
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST_PRODUCTION }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER_PRODUCTION }}
+          PGPASSWORD: ${{ secrets.DATABASE_PASSWORD_PRODUCTION }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT_PRODUCTION }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME_PRODUCTION }}
+        run: |
+          READER_PASSWORD=$(aws secretsmanager get-secret-value --secret-id rabi-food/grafana-reader-password \
+            --query SecretString --output text)
+          echo "::add-mask::$READER_PASSWORD"
+          psql "host=${DATABASE_HOST} port=${DATABASE_PORT} user=${DATABASE_USER} dbname=${DATABASE_NAME} sslmode=require" \
+            -v ON_ERROR_STOP=1 -v reader_password="$READER_PASSWORD" <<'SQL'
+          SELECT 'CREATE ROLE grafana_reader LOGIN'
+          WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grafana_reader') \gexec
+          SELECT format('ALTER ROLE grafana_reader WITH LOGIN PASSWORD %L', :'reader_password') \gexec
+          ALTER ROLE grafana_reader CONNECTION LIMIT 3;
+          ALTER ROLE grafana_reader SET statement_timeout = '30s';
+          GRANT analytics_reader TO grafana_reader;
+          SQL

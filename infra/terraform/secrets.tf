@@ -39,7 +39,7 @@ resource "aws_secretsmanager_secret" "gotrue_db_url" {
 }
 
 resource "aws_secretsmanager_secret_version" "gotrue_db_url" {
-  secret_id = aws_secretsmanager_secret.gotrue_db_url.id
+  secret_id     = aws_secretsmanager_secret.gotrue_db_url.id
   secret_string = "postgres://${var.db_user}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}?search_path=auth&sslmode=require"
 }
 
@@ -59,4 +59,23 @@ resource "aws_secretsmanager_secret" "stripe_webhook_secret" {
 resource "aws_secretsmanager_secret_version" "stripe_webhook_secret" {
   secret_id     = aws_secretsmanager_secret.stripe_webhook_secret.id
   secret_string = stripe_webhook_endpoint.subscription.secret
+}
+
+# Grafana reads the analytics views as this database user (created by deploy.yml, which reads this secret).
+resource "aws_secretsmanager_secret" "grafana_reader_password" {
+  name = "rabi-food/grafana-reader-password"
+}
+
+resource "aws_secretsmanager_secret_version" "grafana_reader_password" {
+  secret_id     = aws_secretsmanager_secret.grafana_reader_password.id
+  secret_string = var.grafana_reader_password
+}
+
+resource "aws_secretsmanager_secret" "grafana_pdc_token" {
+  name = "rabi-food/grafana-pdc-token"
+}
+
+resource "aws_secretsmanager_secret_version" "grafana_pdc_token" {
+  secret_id     = aws_secretsmanager_secret.grafana_pdc_token.id
+  secret_string = grafana_cloud_private_data_source_connect_network_token.agent.token
 }

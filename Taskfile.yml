@@ -19,6 +19,17 @@ tasks:
       - go run main.go
     silent: false
 
+  observe:
+    desc: "Run the API in a container with the production log pipeline, shipping to Grafana Cloud (env=local)"
+    dir: infra/monitoring
+    deps: [migrate]
+    preconditions:
+      - sh: test -f .env.monitoring
+        msg: "Copy infra/monitoring/.env.monitoring.example to .env.monitoring and fill in the Grafana Cloud credentials"
+    cmds:
+      - docker compose up --build
+    silent: false
+
   web:
     desc: "Start the web development server"
     dir: web
@@ -150,10 +161,10 @@ tasks:
   # 🔧 Infrastructure utils
   # =============================
   validate_alloy:
-    desc: "Validate the Alloy configuration"
+    desc: "Validate the Alloy configuration (used locally and in production)"
     dir: infra/monitoring
     cmds:
-      - docker run --rm -v $(pwd)/alloy.config.alloy:/etc/alloy/alloy.config.alloy grafana/alloy:latest validate /etc/alloy/alloy.config.alloy
+      - docker run --rm -v $(pwd)/config.alloy:/etc/alloy/config.alloy grafana/alloy:v1.14.0 validate /etc/alloy/config.alloy
 
   clean_docker:
     desc: "Prune all system and container resources"

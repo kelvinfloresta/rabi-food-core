@@ -8,7 +8,9 @@ var (
 	AuthSecret = os.Getenv("AUTH_SECRET")
 	Env        = environment(os.Getenv("ENV"))
 	// LogLevel is a zerolog level name: trace, debug, info, warn, error, fatal, panic or disabled.
-	LogLevel             = getEnv("LOG_LEVEL", "info")
+	LogLevel = getEnv("LOG_LEVEL", "info")
+	// LogFormat is "json" or "text". Empty means JSON in production and text elsewhere.
+	LogFormat            = os.Getenv("LOG_FORMAT")
 	GoTrueURL            = os.Getenv("GOTRUE_URL")
 	GoTrueServiceKey     = os.Getenv("GOTRUE_SERVICE_KEY")
 	StripeSecretKey      = os.Getenv("STRIPE_SECRET_KEY")

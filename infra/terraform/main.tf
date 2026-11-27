@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.7" # removed blocks
 
   required_providers {
     aws = {
@@ -33,7 +33,7 @@ provider "stripe" {
 }
 
 provider "grafana" {
-  url           = var.grafana_url
-  auth          = var.grafana_admin_token
-  cloud_api_key = var.grafana_cloud_api_key
+  url                       = var.grafana_url
+  auth                      = var.grafana_admin_token
+  cloud_access_policy_token = var.grafana_cloud_access_policy_token
 }

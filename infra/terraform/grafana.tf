@@ -2,92 +2,45 @@ data "grafana_cloud_stack" "main" {
   slug = var.grafana_stack_slug
 }
 
-data "grafana_data_source" "loki" {
-  name = var.grafana_loki_datasource_name
+# Grafana Cloud reaches the private database through the PDC agent in the API task (ecs.tf): RDS stays private.
+resource "grafana_cloud_private_data_source_connect_network" "main" {
+  region           = data.grafana_cloud_stack.main.region_slug
+  name             = "rabi-food-vpc"
+  display_name     = "Rabi Food VPC"
+  stack_identifier = data.grafana_cloud_stack.main.id
 }
 
-resource "grafana_folder" "alerts" {
-  title = "Alerts"
+resource "grafana_cloud_private_data_source_connect_network_token" "agent" {
+  pdc_network_id = grafana_cloud_private_data_source_connect_network.main.pdc_network_id
+  region         = grafana_cloud_private_data_source_connect_network.main.region
+  name           = "rabi-food-pdc-agent"
+  display_name   = "Rabi Food PDC agent"
 }
 
-resource "grafana_contact_point" "email" {
-  name = "email"
+# Platform metrics: the analytics views only (docs/decisions/010-platform-business-metrics.md).
+resource "grafana_data_source" "analytics" {
+  type     = "grafana-postgresql-datasource"
+  name     = "Rabi Food analytics"
+  uid      = "rabi-food-analytics"
+  url      = "${aws_db_instance.postgres.address}:5432"
+  username = "grafana_reader"
 
-  email {
-    addresses               = [var.alert_email_to]
-    disable_resolve_message = false
-  }
+  private_data_source_connect_network_id = grafana_cloud_private_data_source_connect_network.main.pdc_network_id
+
+  # The pool stays under grafana_reader's CONNECTION LIMIT (deploy.yml), leaving one connection for a manual psql.
+  json_data_encoded = jsonencode({
+    database        = var.db_name
+    sslmode         = "require"
+    maxOpenConns    = 2
+    maxIdleConns    = 2
+    connMaxLifetime = 14400
+  })
+
+  secure_json_data_encoded = jsonencode({
+    password = var.grafana_reader_password
+  })
 }
 
-resource "grafana_notification_policy" "main" {
-  contact_point = grafana_contact_point.email.name
-  group_by      = ["alertname", "app"]
-
-  group_wait      = "30s"
-  group_interval  = "5m"
-  repeat_interval = "3h"
-}
-
-resource "grafana_rule_group" "log_errors" {
-  name             = "log-errors"
-  folder_uid       = grafana_folder.alerts.uid
-  interval_seconds = 60
-
-  rule {
-    name      = "LogErrorDetected"
-    condition = "threshold"
-    for       = "30s"
-
-    labels = {
-      severity = "warning"
-    }
-
-    annotations = {
-      summary     = "Error detected in logs"
-      description = "Errors were detected in the last 5 minutes."
-    }
-
-    data {
-      ref_id         = "query"
-      datasource_uid = data.grafana_data_source.loki.uid
-      query_type     = "range"
-
-      relative_time_range {
-        from = 300
-        to   = 0
-      }
-
-      model = jsonencode({
-        expr      = "count_over_time({job=\"docker\"} |= \"error\" [5m])"
-        queryType = "range"
-        refId     = "query"
-      })
-    }
-
-    data {
-      ref_id         = "threshold"
-      datasource_uid = "__expr__"
-
-      relative_time_range {
-        from = 300
-        to   = 0
-      }
-
-      model = jsonencode({
-        type  = "threshold"
-        refId = "threshold"
-        conditions = [{
-          evaluator = { params = [0], type = "gt" }
-          operator  = { type = "and" }
-          query     = { params = ["query"] }
-          reducer   = { type = "last" }
-          type      = "query"
-        }]
-      })
-    }
-
-    notification_settings {
-      contact_point = grafana_contact_point.email.name
-    }
-  }
+resource "grafana_dashboard" "platform" {
+  config_json = file("${path.module}/dashboards/platform.json")
 }

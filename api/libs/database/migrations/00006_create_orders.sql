@@ -40,6 +40,8 @@ COMMENT ON COLUMN commerce.orders.notes IS 'Customer notes for preparation or de
 
 CREATE INDEX idx_orders_deleted_at ON commerce.orders (deleted_at);
 
+CREATE INDEX idx_orders_tenant_id ON commerce.orders (tenant_id);
+
 -- +goose Down
 DROP TABLE IF EXISTS commerce.orders;
 

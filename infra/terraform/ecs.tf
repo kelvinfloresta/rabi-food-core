@@ -8,19 +8,25 @@ resource "aws_ecs_cluster" "main" {
   tags = { Name = "rabi-food-cluster" }
 }
 
-resource "aws_cloudwatch_log_group" "api" {
-  name              = "/ecs/rabi-food-api"
-  retention_in_days = 30
+# The API and GoTrue log through Alloy now. Their groups stay in AWS for the revision still running until the
+# next release, and expire under their retention.
+removed {
+  from = aws_cloudwatch_log_group.api
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = aws_cloudwatch_log_group.gotrue
+  lifecycle {
+    destroy = false
+  }
 }
 
 resource "aws_cloudwatch_log_group" "alloy" {
   name              = "/ecs/rabi-food-alloy"
   retention_in_days = 7
-}
-
-resource "aws_cloudwatch_log_group" "gotrue" {
-  name              = "/ecs/rabi-food-gotrue"
-  retention_in_days = 30
 }
 
 resource "aws_cloudwatch_log_group" "gotrue_migration" {
@@ -29,23 +35,14 @@ resource "aws_cloudwatch_log_group" "gotrue_migration" {
 }
 
 locals {
-  alloy_config = <<-ALLOY
-    prometheus.scrape "api" {
-      targets         = [{"__address__" = "localhost:${var.api_port}"}]
-      forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
-      scrape_interval = "15s"
+  # Written to Docker and shipped by Alloy (config.alloy), not to CloudWatch.
+  docker_log_configuration = {
+    logDriver = "json-file"
+    options = {
+      "max-size" = "10m"
+      "max-file" = "3"
     }
-
-    prometheus.remote_write "grafana_cloud" {
-      endpoint {
-        url = env("GRAFANA_PROMETHEUS_URL")
-        basic_auth {
-          username = env("GRAFANA_PROMETHEUS_INSTANCE_ID")
-          password = env("GRAFANA_TOKEN")
-        }
-      }
-    }
-  ALLOY
+  }
 }
 
 resource "aws_ecs_task_definition" "api" {
@@ -61,36 +58,35 @@ resource "aws_ecs_task_definition" "api" {
       name  = "api"
       image = "${aws_ecr_repository.api.repository_url}:latest"
 
+      # Alloy starts first and, in reverse order, stops last, so it can read the final lines of a crash.
+      # START, not HEALTHY: a broken Alloy must never keep the API from starting.
+      dependsOn = [
+        { containerName = "alloy", condition = "START" },
+      ]
+
       portMappings = [{
         containerPort = var.api_port
         protocol      = "tcp"
       }]
 
       environment = [
-        { name = "ENV",           value = "production" },
-        { name = "API_PORT",      value = tostring(var.api_port) },
+        { name = "ENV", value = "production" },
+        { name = "API_PORT", value = tostring(var.api_port) },
         { name = "DATABASE_HOST", value = aws_db_instance.postgres.address },
         { name = "DATABASE_NAME", value = var.db_name },
         { name = "DATABASE_USER", value = var.db_user },
         { name = "DATABASE_PORT", value = "5432" },
         # GoTrue runs as a sidecar — reachable only on localhost within the task
-        { name = "GOTRUE_URL",    value = "http://localhost:9999" },
+        { name = "GOTRUE_URL", value = "http://localhost:9999" },
       ]
 
       secrets = [
-        { name = "DATABASE_PASSWORD",  valueFrom = aws_secretsmanager_secret.db_password.arn },
-        { name = "AUTH_SECRET",        valueFrom = aws_secretsmanager_secret.auth_secret.arn },
+        { name = "DATABASE_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn },
+        { name = "AUTH_SECRET", valueFrom = aws_secretsmanager_secret.auth_secret.arn },
         { name = "GOTRUE_SERVICE_KEY", valueFrom = aws_secretsmanager_secret.gotrue_service_key.arn },
       ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.api.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
+      logConfiguration = local.docker_log_configuration
     },
     {
       name      = "gotrue-migration"
@@ -126,36 +122,30 @@ resource "aws_ecs_task_definition" "api" {
 
       dependsOn = [
         { containerName = "gotrue-migration", condition = "SUCCESS" },
+        { containerName = "alloy", condition = "START" },
       ]
 
       # No portMappings — GoTrue is not publicly reachable, only via localhost within the task
       environment = [
-        { name = "GOTRUE_API_HOST",           value = "0.0.0.0" },
-        { name = "GOTRUE_API_PORT",           value = "9999" },
-        { name = "API_EXTERNAL_URL",          value = "http://localhost:9999" },
-        { name = "GOTRUE_DB_DRIVER",          value = "postgres" },
-        { name = "GOTRUE_DB_NAMESPACE",       value = "auth" },
-        { name = "GOTRUE_JWT_EXP",            value = "3600" },
-        { name = "GOTRUE_DISABLE_SIGNUP",     value = "true" },
+        { name = "GOTRUE_API_HOST", value = "0.0.0.0" },
+        { name = "GOTRUE_API_PORT", value = "9999" },
+        { name = "API_EXTERNAL_URL", value = "http://localhost:9999" },
+        { name = "GOTRUE_DB_DRIVER", value = "postgres" },
+        { name = "GOTRUE_DB_NAMESPACE", value = "auth" },
+        { name = "GOTRUE_JWT_EXP", value = "3600" },
+        { name = "GOTRUE_DISABLE_SIGNUP", value = "true" },
         { name = "GOTRUE_MAILER_AUTOCONFIRM", value = "true" },
-        { name = "GOTRUE_SITE_URL",           value = "https://${var.domain_name}" },
-        { name = "GOTRUE_LOG_LEVEL",          value = "info" },
+        { name = "GOTRUE_SITE_URL", value = "https://${var.domain_name}" },
+        { name = "GOTRUE_LOG_LEVEL", value = "info" },
       ]
 
       secrets = [
-        { name = "GOTRUE_JWT_SECRET",      valueFrom = aws_secretsmanager_secret.auth_secret.arn },
+        { name = "GOTRUE_JWT_SECRET", valueFrom = aws_secretsmanager_secret.auth_secret.arn },
         { name = "GOTRUE_DB_DATABASE_URL", valueFrom = aws_secretsmanager_secret.gotrue_db_url.arn },
-        { name = "GOTRUE_OPERATOR_TOKEN",  valueFrom = aws_secretsmanager_secret.gotrue_service_key.arn },
+        { name = "GOTRUE_OPERATOR_TOKEN", valueFrom = aws_secretsmanager_secret.gotrue_service_key.arn },
       ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.gotrue.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
+      logConfiguration = local.docker_log_configuration
     },
     {
       name      = "alloy"
@@ -163,12 +153,25 @@ resource "aws_ecs_task_definition" "api" {
       essential = false
 
       entryPoint = ["/bin/sh", "-c"]
-      command    = ["printf '%s' \"$ALLOY_CONFIG\" > /tmp/config.alloy && exec /bin/alloy run /tmp/config.alloy"]
+      command    = ["printf '%s' \"$ALLOY_CONFIG\" > /tmp/config.alloy && exec /bin/alloy run --storage.path=/var/lib/alloy/data /tmp/config.alloy"]
 
       environment = [
-        { name = "ALLOY_CONFIG",                   value = local.alloy_config },
-        { name = "GRAFANA_PROMETHEUS_URL",          value = data.grafana_cloud_stack.main.prometheus_remote_write_url },
-        { name = "GRAFANA_PROMETHEUS_INSTANCE_ID",  value = tostring(data.grafana_cloud_stack.main.prometheus_user_id) },
+        { name = "ALLOY_CONFIG", value = file("${path.module}/../monitoring/config.alloy") },
+        { name = "ENVIRONMENT", value = "production" },
+        { name = "LOG_CONTAINER_FILTER", value = "com.amazonaws.ecs.task-definition-family=rabi-food-api" },
+        { name = "LOG_SERVICES", value = "api|gotrue|pdc-agent" },
+        { name = "API_METRICS_TARGET", value = "localhost:${var.api_port}" },
+        { name = "GRAFANA_LOKI_URL", value = "${data.grafana_cloud_stack.main.logs_url}/loki/api/v1/push" },
+        { name = "GRAFANA_LOKI_USER_ID", value = tostring(data.grafana_cloud_stack.main.logs_user_id) },
+        { name = "GRAFANA_PROMETHEUS_URL", value = data.grafana_cloud_stack.main.prometheus_remote_write_endpoint },
+        { name = "GRAFANA_PROMETHEUS_INSTANCE_ID", value = tostring(data.grafana_cloud_stack.main.prometheus_user_id) },
+      ]
+
+      # Alloy reads the other containers' logs through the host's Docker API, which gives it control of Docker on
+      # this instance (readOnly does not restrict the API); its read position survives restarts.
+      mountPoints = [
+        { sourceVolume = "docker_socket", containerPath = "/var/run/docker.sock", readOnly = true },
+        { sourceVolume = "alloy_data", containerPath = "/var/lib/alloy" },
       ]
 
       secrets = [
@@ -183,19 +186,56 @@ resource "aws_ecs_task_definition" "api" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
+    },
+    {
+      # Opens Grafana Cloud's tunnel to the private database for the platform dashboards (grafana.tf).
+      name      = "pdc-agent"
+      image     = "grafana/pdc-agent:0.0.69"
+      essential = false
+
+      entryPoint = ["/bin/sh", "-c"]
+      command    = ["exec /usr/bin/pdc -token \"$GCLOUD_PDC_SIGNING_TOKEN\" -cluster \"$GCLOUD_PDC_CLUSTER\" -gcloud-hosted-grafana-id \"$GCLOUD_HOSTED_GRAFANA_ID\""]
+
+      environment = [
+        { name = "GCLOUD_PDC_CLUSTER", value = data.grafana_cloud_stack.main.cluster_slug },
+        { name = "GCLOUD_HOSTED_GRAFANA_ID", value = tostring(data.grafana_cloud_stack.main.id) },
+      ]
+
+      secrets = [
+        { name = "GCLOUD_PDC_SIGNING_TOKEN", valueFrom = aws_secretsmanager_secret.grafana_pdc_token.arn },
+      ]
+
+      logConfiguration = local.docker_log_configuration
     }
   ])
 
-  lifecycle {
-    ignore_changes = [container_definitions]
+  volume {
+    name      = "docker_socket"
+    host_path = "/var/run/docker.sock"
   }
+
+  volume {
+    name      = "alloy_data"
+    host_path = "/var/lib/alloy"
+  }
+
+  # Releases register new revisions from the live one (deploy.yml), so a change here needs
+  # terraform apply -replace=aws_ecs_task_definition.api. A change to config.alloy triggers it by itself.
+  lifecycle {
+    ignore_changes       = [container_definitions]
+    replace_triggered_by = [terraform_data.alloy_config]
+  }
+}
+
+resource "terraform_data" "alloy_config" {
+  input = filesha256("${path.module}/../monitoring/config.alloy")
 }
 
 resource "aws_ecs_service" "api" {
   name            = "rabi-food-api"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.api.arn
-  desired_count = 1
+  desired_count   = 1
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.ec2.name

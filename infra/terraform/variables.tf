@@ -63,8 +63,14 @@ variable "grafana_stack_slug" {
   type        = string
 }
 
-variable "grafana_cloud_api_key" {
-  description = "Grafana Cloud organization API key (grafana.com → My Account → API Keys)"
+variable "grafana_cloud_access_policy_token" {
+  description = "Grafana Cloud access policy token: stacks:read, plus the scopes to manage Private Data Source Connect networks and tokens (grafana.com → Administration → Access policies)"
+  type        = string
+  sensitive   = true
+}
+
+variable "grafana_reader_password" {
+  description = "Password of the grafana_reader database user, which reads only the analytics views"
   type        = string
   sensitive   = true
 }
@@ -86,20 +92,9 @@ variable "grafana_url" {
 }
 
 variable "grafana_admin_token" {
-  description = "Grafana Cloud Service Account token with Editor or Admin role (for alerting provisioning)"
+  description = "Grafana Cloud Service Account token with Editor or Admin role (data sources and dashboards)"
   type        = string
   sensitive   = true
-}
-
-variable "grafana_loki_datasource_name" {
-  description = "Name of the Loki datasource in Grafana Cloud"
-  type        = string
-  default     = "grafana-loki"
-}
-
-variable "alert_email_to" {
-  description = "Email address to receive alerts"
-  type        = string
 }
 
 variable "stripe_secret_key" {

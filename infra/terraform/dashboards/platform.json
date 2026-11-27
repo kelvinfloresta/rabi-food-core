@@ -1,0 +1,329 @@
+{
+  "uid": "rabi-food-platform",
+  "title": "Plataforma",
+  "description": "Visão do dono do software sobre todos os estabelecimentos. Valores pagos, não receita.",
+  "tags": [
+    "rabi-food",
+    "platform"
+  ],
+  "timezone": "America/Sao_Paulo",
+  "schemaVersion": 39,
+  "editable": true,
+  "time": {
+    "from": "now-1y",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Estabelecimentos",
+      "description": "Lojas cadastradas na plataforma.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS estabelecimentos FROM analytics.tenants"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Compradores (soma por estabelecimento)",
+      "description": "Soma dos compradores de cada loja (quem comprou em duas lojas conta duas vezes).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(buyers), 0) AS compradores FROM analytics.tenant_current"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Assinaturas ativas",
+      "description": "Assinaturas ativas e pagas em todas as lojas.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(active_subscriptions), 0) AS assinaturas FROM analytics.tenant_current"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Valor pago no mês",
+      "description": "Pedidos e assinaturas pagos neste mês. É o valor recebido, não a receita (decisão 008).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(orders_paid_cents + subscriptions_paid_cents), 0) / 100.0 AS valor FROM analytics.tenant_monthly WHERE month = date_trunc('month', now() AT TIME ZONE 'America/Sao_Paulo')::date"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "barchart",
+      "title": "Valor pago por mês",
+      "description": "Pedidos avulsos e assinaturas pagos, por mês do pagamento. A parte das assinaturas mostra se elas são o caminho principal (decisão 006).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_char(month, 'YYYY-MM') AS mes, SUM(orders_paid_cents) / 100.0 AS pedidos, SUM(subscriptions_paid_cents) / 100.0 AS assinaturas FROM analytics.tenant_monthly GROUP BY month ORDER BY month"
+        }
+      ],
+      "options": {
+        "stacking": "normal",
+        "xField": "mes",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Novos estabelecimentos e compradores por mês",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_char(month, 'YYYY-MM') AS mes, COALESCE(t.lojas, 0) AS novas_lojas, COALESCE(m.novos_compradores, 0) AS novos_compradores FROM (SELECT month, SUM(new_buyers) AS novos_compradores FROM analytics.tenant_monthly GROUP BY month) m FULL JOIN (SELECT date_trunc('month', created_at AT TIME ZONE 'America/Sao_Paulo')::date AS month, COUNT(*) AS lojas FROM analytics.tenants GROUP BY 1) t USING (month) ORDER BY month"
+        }
+      ],
+      "options": {
+        "xField": "mes",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Estabelecimentos",
+      "description": "Uma linha por loja, com a atividade do mês corrente. Sem dados de clientes individuais (decisão 010).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "rabi-food-analytics"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "rabi-food-analytics"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT t.name AS loja, t.created_at AS desde, c.buyers AS compradores, c.active_subscriptions AS assinaturas_ativas, c.last_activity_at AS ultima_atividade, COALESCE(m.orders_paid, 0) AS pedidos_pagos_mes, COALESCE(m.subscriptions_paid, 0) AS assinaturas_pagas_mes, COALESCE(m.orders_paid_cents + m.subscriptions_paid_cents, 0) / 100.0 AS valor_pago_mes FROM analytics.tenants t JOIN analytics.tenant_current c USING (tenant_id) LEFT JOIN analytics.tenant_monthly m ON m.tenant_id = t.tenant_id AND m.month = date_trunc('month', now() AT TIME ZONE 'America/Sao_Paulo')::date ORDER BY c.last_activity_at DESC NULLS LAST"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "valor_pago_mes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyBRL"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

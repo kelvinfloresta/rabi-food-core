@@ -1,1 +1,4 @@
 .env.infra
+
+# Grafana Cloud credentials for the local log pipeline test
+infra/monitoring/.env.monitoring

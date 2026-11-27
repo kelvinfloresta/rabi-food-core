@@ -1,0 +1,152 @@
+// One pipeline for production (ECS sidecar) and local tests (infra/monitoring/docker-compose.yaml): they differ
+// only in the environment variables below, so what is tested locally is what runs in production.
+//
+//   ENVIRONMENT                     "production" or "local", sent as the env label.
+//   LOG_CONTAINER_FILTER            Docker label selecting this deployment's containers.
+//   LOG_SERVICES                    Regex of the services whose logs are shipped (e.g. "api|gotrue").
+//   API_METRICS_TARGET              host:port of the API's /metrics.
+//   GRAFANA_LOKI_URL                Grafana Cloud Loki push URL (.../loki/api/v1/push).
+//   GRAFANA_LOKI_USER_ID            Grafana Cloud Loki user.
+//   GRAFANA_PROMETHEUS_URL          Grafana Cloud Prometheus remote write URL.
+//   GRAFANA_PROMETHEUS_INSTANCE_ID  Grafana Cloud Prometheus user.
+//   GRAFANA_TOKEN                   Grafana Cloud access policy token (logs and metrics write).
+
+// --- Logs ---
+
+discovery.docker "containers" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "5s"
+
+	filter {
+		name   = "label"
+		values = [sys.env("LOG_CONTAINER_FILTER")]
+	}
+}
+
+// Only the services that log to Docker are read; the others (e.g. Alloy itself in production) log elsewhere.
+discovery.relabel "log_targets" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = [
+			"__meta_docker_container_label_com_amazonaws_ecs_container_name",
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		separator = ""
+		regex     = sys.env("LOG_SERVICES")
+		action    = "keep"
+	}
+}
+
+discovery.relabel "containers" {
+	targets = []
+
+	// The container's role: the ECS container name in production, the compose service locally.
+	rule {
+		source_labels = [
+			"__meta_docker_container_label_com_amazonaws_ecs_container_name",
+			"__meta_docker_container_label_com_docker_compose_service",
+		]
+		separator    = ""
+		target_label = "service"
+	}
+
+	rule {
+		target_label = "env"
+		replacement  = sys.env("ENVIRONMENT")
+	}
+}
+
+loki.source.docker "containers" {
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.relabel.log_targets.output
+	relabel_rules = discovery.relabel.containers.rules
+	forward_to    = [loki.process.json.receiver]
+}
+
+// Only level becomes a label: every other field stays in the JSON line and is parsed at query time,
+// so the index stays small.
+loki.process "json" {
+	forward_to = [loki.write.grafana_cloud.receiver]
+
+	// GoTrue logs who signed in (e-mail, user id, IP). People's data stays out of Grafana Cloud
+	// (docs/decisions/010-platform-business-metrics.md), so it is masked before it leaves.
+	stage.match {
+		selector = "{service=\"gotrue\"}"
+
+		stage.replace {
+			expression = "([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})"
+			replace    = "<email>"
+		}
+
+		stage.replace {
+			expression = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+			replace    = "<id>"
+		}
+
+		// IPv4, compressed IPv6 (::) or full IPv6; never a clock time (two colons).
+		stage.replace {
+			expression = "((?:::ffff:)?(?:[0-9]{1,3}\\.){3}[0-9]{1,3}|[0-9a-fA-F:]*::[0-9a-fA-F:]*|(?:[0-9a-fA-F]{1,4}:){4,7}[0-9a-fA-F]{1,4})"
+			replace    = "<ip>"
+		}
+	}
+
+	stage.json {
+		expressions = {level = ""}
+	}
+
+	stage.labels {
+		values = {level = ""}
+	}
+}
+
+loki.write "grafana_cloud" {
+	endpoint {
+		url = sys.env("GRAFANA_LOKI_URL")
+
+		basic_auth {
+			username = sys.env("GRAFANA_LOKI_USER_ID")
+			password = sys.env("GRAFANA_TOKEN")
+		}
+	}
+}
+
+// --- Metrics ---
+
+prometheus.scrape "api" {
+	targets = [{
+		"__address__" = sys.env("API_METRICS_TARGET"),
+		"env"         = sys.env("ENVIRONMENT"),
+	}]
+	forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+	scrape_interval = "15s"
+}
+
+// Alloy's own metrics, so a failing shipment (dropped or unsent lines) can be watched like any other metric.
+prometheus.exporter.self "alloy" { }
+
+prometheus.scrape "alloy" {
+	targets         = prometheus.exporter.self.alloy.targets
+	forward_to      = [prometheus.relabel.env.receiver]
+	scrape_interval = "60s"
+}
+
+prometheus.relabel "env" {
+	forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+	rule {
+		target_label = "env"
+		replacement  = sys.env("ENVIRONMENT")
+	}
+}
+
+prometheus.remote_write "grafana_cloud" {
+	endpoint {
+		url = sys.env("GRAFANA_PROMETHEUS_URL")
+
+		basic_auth {
+			username = sys.env("GRAFANA_PROMETHEUS_INSTANCE_ID")
+			password = sys.env("GRAFANA_TOKEN")
+		}
+	}
+}
