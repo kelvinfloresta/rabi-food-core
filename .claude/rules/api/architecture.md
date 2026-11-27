@@ -32,7 +32,7 @@ Feature-based modular monolith: `api/features/<feature>/{controller,gateway,rout
 - SQL is built with squirrel/placeholders, never by string concatenation.
 
 ## Handlers
-- Parse, then `validator.V.Struct(data)`, then set `logger.GetWideEvent(uctx).Event = "<verb>-<entity>"`, then call the use case. Some read handlers still miss the WideEvent event — add it when touching them.
+- Set `logger.GetWideEvent(uctx).Event = "<verb>-<entity>"` first, so parse and validation failures are logged under it; then parse, `validator.V.Struct(data)`, and call the use case. Most handlers still set it after parsing, and some read handlers miss it — fix both when touching them.
 - A `BodyParser` error must become a 400: `fmt.Errorf("%w: %w", errs.ErrInvalidBody, err)`. Never `return ctx.JSON(err)`: it answers **200** with the parse error — a known bug in most create/patch handlers; fix it when touching them.
 
 ## Health check
