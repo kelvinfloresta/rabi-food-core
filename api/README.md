@@ -66,27 +66,27 @@ Once running, you can check:
 
 ---
 
-### 📊 Observability Mode (Optional)
+### 📊 Log Pipeline Test (Optional)
 
-If you want to test the **observability and logging stack**, use:
+Logs and metrics go to Grafana Cloud through Alloy, with the same configuration (`infra/monitoring/config.alloy`) in production and locally. To check what the API ships before deploying:
 
 ```bash
-task test-with-logs
+cp infra/monitoring/.env.monitoring.example infra/monitoring/.env.monitoring   # fill in the Grafana Cloud credentials
+task observe
 ```
 
 This command:
 
-* Starts both the **application infrastructure** (Grafana, Prometheus, Loki, Alloy)
-  and the **test infrastructure** (Postgres, pgAdmin)
-* Runs the tests inside a Dockerized environment
-* Streams logs to the observability stack
+* Starts the database (`task db`) and applies the migrations
+* Runs the API in a container (JSON logs, as in production) next to Alloy
+* Ships the API's logs and metrics to Grafana Cloud with the label `env="local"`
 
-Once running, you can access:
+Once running:
 
-* **Grafana:** [http://localhost:3100](http://localhost:3100) — to view application and test logs
-* **pgAdmin:** [http://localhost:5050](http://localhost:5050) — to verify database state
+* **Grafana Cloud → Explore:** `{env="local", service="api"}` shows the request lines; `| json` parses their fields
+* **Alloy UI:** [http://localhost:12345](http://localhost:12345) — what was discovered and how many lines were read and sent
 
-> This mode is intended for validating **log ingestion and observability configuration**, not for everyday development.
+> `task observe` and `task api` both use port 3000: run one at a time.
 
 ---
 

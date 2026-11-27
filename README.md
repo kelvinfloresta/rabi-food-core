@@ -15,7 +15,7 @@ Backend monolith for the Rabi Food platform — a multi-tenant food delivery sys
 - **Logs**: zerolog (Wide Event pattern)
 - **Validation**: go-playground/validator
 - **Tests**: testify suite + httpexpect
-- **Observability**: Prometheus + Grafana + Loki + Alloy
+- **Observability**: Grafana Cloud (Loki, Prometheus), shipped by Alloy
 
 ## Architecture
 
@@ -46,7 +46,7 @@ rabi-food-core/
 │       └── validator/
 ├── infra/
 │   ├── api/                    # Docker Compose for API + GoTrue
-│   ├── monitoring/             # Grafana, Prometheus, Loki, Alloy
+│   ├── monitoring/             # Alloy config (local and production) and the local log pipeline test
 │   └── terraform/              # AWS infrastructure (ECS, RDS, ECR)
 └── Taskfile.yml
 ```

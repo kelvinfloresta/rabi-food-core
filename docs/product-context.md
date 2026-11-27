@@ -38,6 +38,7 @@ Agrupadas pelo caminho do cliente: como chega, como compra, de quem são os dado
 **Contas e dados do cliente**
 - [001 Conta do cliente compartilhada entre estabelecimentos](decisions/001-shared-customer-accounts.md)
 - [007 CRM: o que o estabelecimento vê dos seus clientes](decisions/007-crm-customer-data-visibility.md) — proposta
+- [010 Métricas da plataforma: números por estabelecimento, nunca por pessoa](decisions/010-platform-business-metrics.md)
 
 **Gestão do negócio**
 - [008 Receita unificada para análise](decisions/008-unified-revenue-for-analysis.md)

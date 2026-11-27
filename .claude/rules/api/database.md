@@ -25,3 +25,7 @@ paths:
 - **Pre-production (current):** schema changes go straight into the table's `create` migration — no incremental `add_x_to_y` files. Recreate the local DB afterwards: `task db-down && task db && task migrate && task seed`.
 - **After go-live:** never edit an applied migration; every change is a new migration.
 - Integration tests apply every migration on a fresh database: a SQL error at test startup means the migration chain is broken for any new environment.
+
+## Analytics views
+- `analytics.*` views are the platform dashboards' contract (`infra/terraform/dashboards/`): keep their column names; the analytics integration test runs every dashboard query.
+- Output columns are aggregates per tenant, never a person's data (decision 010). A view that carries `user_id` or similar stays internal: `analytics_reader` gets `SELECT` only on the aggregate views, granted by name.
